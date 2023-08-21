@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/x-icon" href="/public/favicon.ico" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css"
+    />
+    <link rel="stylesheet" href="/public/css/styles.css" />
+    <title>Go html test</title>
+  </head>
+  <body>
+    <main id="page" class="container">
+      {{ block "page" . }} {{ block "form" . }}
+      <h1>Todo list</h1>
+      <!-- .Key as name attribute required to stop firefox from preserving values through page refresh -->
+      <form
+        id="todo-form"
+        name="{{ .Key }}"
+        hx-post="/todos/add"
+        hx-target="#page"
+      >
+        <input
+          type="text"
+          name="task"
+          placeholder="Add task..."
+          value="{{ .Task }}"
+          autocomplete="off"
+        />
+        <p>{{ .Error }}</p>
+        <button type="submit">Add Todo</button>
+      </form>
+      {{ end }}
+      <div
+        class="container"
+        id="todos"
+        hx-get="/todos/list"
+        hx-trigger="every 20s"
+      >
+        {{ block "list" . }} {{ range .Todos }} {{ block "item" . }}
+        <div class="todo_item">
+          <span class="todo_item-task">{{ .Task }}</span>
+          {{ if .Done }}
+          <button
+            role="button"
+            class="todo_item-toggle"
+            hx-put="/todos/toggle/{{ .Id }}"
+            hx-target="#todos"
+          >
+            Mark Undone
+          </button>
+          <button
+            role="button"
+            class="secondary"
+            hx-delete="/todos/remove/{{ .Id }}"
+            hx-target="#todos"
+          >
+            Remove
+          </button>
+          {{ else }}
+          <button
+            role="button"
+            class="todo_item-toggle outline"
+            hx-put="/todos/toggle/{{ .Id }}"
+            hx-target="#todos"
+          >
+            Mark Done
+          </button>
+          <button disabled role="button" class="secondary outline">
+            Remove
+          </button>
+          {{ end }}
+        </div>
+        {{ end }} {{ end }} {{ end }}
+      </div>
+      {{ end }}
+    </main>
+    <script type="module" src="/public/js/index.js"></script>
+  </body>
+</html>

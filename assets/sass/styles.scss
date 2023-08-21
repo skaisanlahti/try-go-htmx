@@ -1,0 +1,15 @@
+.todo_item {
+  display: grid;
+  align-items: center;
+  grid-template-columns: 1fr 200px 200px;
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  & > * {
+    margin: 0 !important;
+  }
+
+  &-task {
+    font-size: 2em;
+  }
+}
