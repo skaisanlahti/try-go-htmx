@@ -6,4 +6,4 @@ declare global {
 }
 
 window.htmx = htmx;
-console.log("scripts loaded", new Date().toLocaleTimeString());
+console.log("scripts loaded successfully", new Date().toLocaleTimeString());
