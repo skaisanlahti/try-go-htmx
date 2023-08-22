@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -28,15 +29,17 @@ type page struct {
 type service struct {
 	page  *template.Template
 	todos map[string]todo
+	mutex sync.RWMutex
 }
 
-//go:embed templates/index.html
-var indexHTML embed.FS
+//go:embed todo-page.html
+var templateFS embed.FS
 
 func NewService() *service {
 	return &service{
-		page:  template.Must(template.ParseFS(indexHTML, "templates/index.html")),
+		page:  template.Must(template.ParseFS(templateFS, "todo-page.html")),
 		todos: make(map[string]todo),
+		mutex: sync.RWMutex{},
 	}
 }
 
@@ -53,13 +56,17 @@ func (s *service) newPageData() page {
 	for _, t := range s.todos {
 		page.Todos = append(page.Todos, t)
 	}
+
 	sort.Slice(page.Todos, func(i, j int) bool {
 		return page.Todos[i].Task < page.Todos[j].Task
 	})
+
 	return page
 }
 
 func (s *service) Home(w http.ResponseWriter, r *http.Request) {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
 	page := s.newPageData()
 	log.Printf("Rendered page")
 	s.page.Execute(w, page)
@@ -70,16 +77,23 @@ func (s *service) GetTodos(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
+
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
 	page := s.newPageData()
 	log.Printf("Got %d todos", len(page.Todos))
 	s.page.ExecuteTemplate(w, "list", page)
 }
 
 func (s *service) AddTodo(w http.ResponseWriter, r *http.Request) {
+
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
+
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	task := r.FormValue("task")
 	if task == "" {
 		page := s.newPageData()
@@ -87,6 +101,7 @@ func (s *service) AddTodo(w http.ResponseWriter, r *http.Request) {
 		s.page.ExecuteTemplate(w, "page", page)
 		return
 	}
+
 	todo := todo{Id: uuid.NewString(), Task: task, Done: false}
 	s.todos[todo.Id] = todo
 	log.Printf("Added todo %s", todo.Id)
@@ -95,12 +110,16 @@ func (s *service) AddTodo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *service) ToggleTodo(w http.ResponseWriter, r *http.Request) {
+
 	if r.Method != http.MethodPut {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
+
 	pathParts := getPathParts(r.URL.Path)
 	id := pathParts[2]
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	t, found := s.todos[id]
 	if !found {
 		w.WriteHeader(http.StatusNotFound)
@@ -115,18 +134,20 @@ func (s *service) ToggleTodo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *service) RemoveTodo(w http.ResponseWriter, r *http.Request) {
+
 	if r.Method != http.MethodDelete {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
 	pathParts := getPathParts(r.URL.Path)
 	id := pathParts[2]
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	t, found := s.todos[id]
 	if !found {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-
 	delete(s.todos, t.Id)
 	log.Printf("Deleted todo %s", t.Id)
 	page := s.newPageData()
