@@ -1,7 +1,6 @@
 package todos
 
 import (
-	"database/sql"
 	"errors"
 	"net/http"
 	"net/url"
@@ -15,10 +14,10 @@ type todoController struct {
 	todoView       todoRenderer
 }
 
-func newTodoController(database *sql.DB) *todoController {
+func newTodoController(repo repository[todoRecord], view todoRenderer) *todoController {
 	return &todoController{
-		todoRepository: newSqlTodoRepository(database),
-		todoView:       newTodoView(),
+		todoRepository: repo,
+		todoView:       view,
 	}
 }
 
