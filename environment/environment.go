@@ -1,19 +1,22 @@
 package environment
 
 import (
+	"database/sql"
 	"log"
 	"os"
 	"strings"
 )
 
 type Environment struct {
-	Address string
+	Address  string
+	Database string
 }
 
-func New(filename string) Environment {
+func Read(filename string) Environment {
 	content, err := os.ReadFile(filename)
 	if err != nil {
-		log.Fatal("Env file not found in")
+		log.Print("Env file not found")
+		log.Fatal(err)
 	}
 
 	envMap := make(map[string]string)
@@ -35,7 +38,22 @@ func New(filename string) Environment {
 		log.Fatal("ADDRESS not found in env file.")
 	}
 
-	return Environment{
-		Address: address,
+	database, exists := envMap["DATABASE"]
+	if !exists {
+		log.Fatal("DATABASE not found in env file.")
 	}
+
+	return Environment{
+		Address:  address,
+		Database: database,
+	}
+}
+
+func OpenDatabase(connectionString string) *sql.DB {
+	database, err := sql.Open("pgx", connectionString)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return database
 }

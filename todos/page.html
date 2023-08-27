@@ -13,7 +13,7 @@
   </head>
   <body>
     <main id="page" class="container">
-      {{ block "page" . }} {{ block "form" . }}
+      {{ block "main" . }}
       <h1>Todo list</h1>
       <!-- .Key as name attribute required to stop firefox from preserving values through page refresh -->
       <form
@@ -32,21 +32,15 @@
         <p>{{ .Error }}</p>
         <button type="submit">Add Todo</button>
       </form>
-      {{ end }}
-      <div
-        class="container"
-        id="todos"
-        hx-get="/todos/list"
-        hx-trigger="every 20s"
-      >
-        {{ block "list" . }} {{ range .Todos }} {{ block "item" . }}
+      <div class="container" id="todos">
+        {{ block "list" . }} {{ range .Todos }}
         <div class="todo_item">
           <span class="todo_item-task">{{ .Task }}</span>
           {{ if .Done }}
           <button
             role="button"
             class="todo_item-toggle"
-            hx-put="/todos/toggle/{{ .Id }}"
+            hx-post="/todos/toggle?id={{ .Id }}"
             hx-target="#todos"
           >
             Mark Undone
@@ -54,7 +48,7 @@
           <button
             role="button"
             class="secondary"
-            hx-delete="/todos/remove/{{ .Id }}"
+            hx-post="/todos/remove?id={{ .Id }}"
             hx-target="#todos"
           >
             Remove
@@ -63,7 +57,7 @@
           <button
             role="button"
             class="todo_item-toggle outline"
-            hx-put="/todos/toggle/{{ .Id }}"
+            hx-post="/todos/toggle?id={{ .Id }}"
             hx-target="#todos"
           >
             Mark Done
@@ -73,7 +67,7 @@
           </button>
           {{ end }}
         </div>
-        {{ end }} {{ end }} {{ end }}
+        {{ end }} {{ end }}
       </div>
       {{ end }}
     </main>
