@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"strconv"
 
-	c "github.com/skaisanlahti/test-go/common"
+	c "github.com/skaisanlahti/try-go-htmx/common"
 )
 
 type todoController struct {

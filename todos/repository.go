@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"sort"
 
-	"github.com/skaisanlahti/test-go/common"
+	"github.com/skaisanlahti/try-go-htmx/common"
 )
 
 type repository[T any] interface {

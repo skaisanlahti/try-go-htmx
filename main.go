@@ -7,8 +7,8 @@ import (
 	"net/http"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/skaisanlahti/test-go/environment"
-	"github.com/skaisanlahti/test-go/todos"
+	"github.com/skaisanlahti/try-go-htmx/environment"
+	"github.com/skaisanlahti/try-go-htmx/todos"
 )
 
 //go:embed public/*

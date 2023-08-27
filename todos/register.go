@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"net/http"
 
-	"github.com/skaisanlahti/test-go/common"
+	"github.com/skaisanlahti/try-go-htmx/common"
 )
 
 func middleware(handler common.RouteHandler) http.Handler {

@@ -1,4 +1,4 @@
-module github.com/skaisanlahti/test-go
+module github.com/skaisanlahti/try-go-htmx
 
 go 1.21
 
