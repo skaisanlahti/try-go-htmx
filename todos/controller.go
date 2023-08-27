@@ -11,51 +11,51 @@ import (
 )
 
 type todoController struct {
-	repository todoRepository
-	view       todoRenderer
+	todoRepository repository[todoRecord]
+	todoView       todoRenderer
 }
 
 func newTodoController(database *sql.DB) *todoController {
 	return &todoController{
-		repository: newSqlTodoRepository(database),
-		view:       newTodoView(),
+		todoRepository: newSqlTodoRepository(database),
+		todoView:       newTodoView(),
 	}
 }
 
 func (this *todoController) todoPage(response http.ResponseWriter, request *http.Request) error {
-	data, err := newTodoPageData(this.repository)
+	data, err := newTodoPageData(this.todoRepository)
 	if err != nil {
 		return c.NewRouteError(err.Error(), http.StatusInternalServerError).Log(err)
 	}
 
-	this.view.renderPage(response, data)
+	this.todoView.renderPage(response, data)
 	return nil
 }
 
 func (this *todoController) addTodo(response http.ResponseWriter, request *http.Request) error {
 	task := request.FormValue("task")
 	if task == "" {
-		data, err := newTodoPageData(this.repository)
+		data, err := newTodoPageData(this.todoRepository)
 		if err != nil {
 			return c.NewRouteError(err.Error(), http.StatusInternalServerError).Log(err)
 		}
 
 		data.Error = "Task can't be empty."
-		this.view.renderMain(response, data)
+		this.todoView.renderMain(response, data)
 		return nil
 	}
 
 	newTodo := todoRecord{Task: task, Done: false}
-	if err := this.repository.addTodo(newTodo); err != nil {
+	if err := this.todoRepository.add(newTodo); err != nil {
 		return c.NewRouteError(err.Error(), http.StatusInternalServerError).Log(err)
 	}
 
-	data, err := newTodoPageData(this.repository)
+	data, err := newTodoPageData(this.todoRepository)
 	if err != nil {
 		return c.NewRouteError(err.Error(), http.StatusInternalServerError).Log(err)
 	}
 
-	this.view.renderMain(response, data)
+	this.todoView.renderMain(response, data)
 	return nil
 }
 
@@ -65,23 +65,23 @@ func (this *todoController) toggleTodo(response http.ResponseWriter, request *ht
 		return c.NewRouteError(err.Error(), http.StatusBadRequest).Log(err)
 	}
 
-	todo, err := this.repository.getTodoByID(id)
+	todo, err := this.todoRepository.find(id)
 	if err != nil {
-		return c.NewRouteError(err.Error(), http.StatusInternalServerError).Log(err)
+		return c.NewRouteError(err.Error(), http.StatusNotFound).Log(err)
 	}
 
 	todo.Done = !todo.Done
-	err = this.repository.updateTodo(todo)
+	err = this.todoRepository.update(todo)
 	if err != nil {
 		return c.NewRouteError(err.Error(), http.StatusInternalServerError).Log(err)
 	}
 
-	data, err := newTodoPageData(this.repository)
+	data, err := newTodoPageData(this.todoRepository)
 	if err != nil {
 		return c.NewRouteError(err.Error(), http.StatusInternalServerError).Log(err)
 	}
 
-	this.view.renderList(response, data)
+	this.todoView.renderList(response, data)
 	return nil
 }
 
@@ -91,17 +91,17 @@ func (this *todoController) removeTodo(response http.ResponseWriter, request *ht
 		return c.NewRouteError(err.Error(), http.StatusBadRequest).Log(err)
 	}
 
-	err = this.repository.removeTodo(id)
+	err = this.todoRepository.remove(id)
 	if err != nil {
 		return c.NewRouteError(err.Error(), http.StatusInternalServerError).Log(err)
 	}
 
-	data, err := newTodoPageData(this.repository)
+	data, err := newTodoPageData(this.todoRepository)
 	if err != nil {
 		return c.NewRouteError(err.Error(), http.StatusInternalServerError).Log(err)
 	}
 
-	this.view.renderList(response, data)
+	this.todoView.renderList(response, data)
 	return nil
 }
 

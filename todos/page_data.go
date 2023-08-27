@@ -11,8 +11,8 @@ type todoPageData struct {
 	Key   int64 // use as cache key or name attribute to bypass caching in browser
 }
 
-func newTodoPageData(todoClient todoRepository) (todoPageData, error) {
-	todos, err := todoClient.getAllTodos()
+func newTodoPageData(todoRepository repository[todoRecord]) (todoPageData, error) {
+	todos, err := todoRepository.list()
 	if err != nil {
 		return todoPageData{}, err
 	}
