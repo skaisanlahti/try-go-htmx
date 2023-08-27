@@ -7,7 +7,7 @@ import (
 	"github.com/skaisanlahti/test-go/common"
 )
 
-type todoClient interface {
+type todoRepository interface {
 	getAllTodos() ([]todoRecord, error)
 	getTodoByID(id int) (todoRecord, error)
 	addTodo(todo todoRecord) error
@@ -15,13 +15,13 @@ type todoClient interface {
 	removeTodo(id int) error
 }
 
-type sqlTodoClient struct {
+type sqlTodoRepository struct {
 	queryClient *common.QueryClient
 	database    *sql.DB
 }
 
-func newTodoDatabaseClient(db *sql.DB) *sqlTodoClient {
-	return &sqlTodoClient{
+func newSqlTodoRepository(db *sql.DB) *sqlTodoRepository {
+	return &sqlTodoRepository{
 		database:    db,
 		queryClient: common.NewQueryClient(db),
 	}
@@ -29,7 +29,7 @@ func newTodoDatabaseClient(db *sql.DB) *sqlTodoClient {
 
 const getAllTodosQuery = `SELECT * FROM "Todos"`
 
-func (this *sqlTodoClient) getAllTodos() ([]todoRecord, error) {
+func (this *sqlTodoRepository) getAllTodos() ([]todoRecord, error) {
 	var todos []todoRecord
 	getAllTodos := this.queryClient.Prepare(getAllTodosQuery)
 	rows, err := getAllTodos.Query()
@@ -56,7 +56,7 @@ func (this *sqlTodoClient) getAllTodos() ([]todoRecord, error) {
 
 const getTodoByIDQuery string = `SELECT * FROM "Todos" WHERE "Id" = $1`
 
-func (this *sqlTodoClient) getTodoByID(id int) (todoRecord, error) {
+func (this *sqlTodoRepository) getTodoByID(id int) (todoRecord, error) {
 	var todo todoRecord
 	getTodoByID := this.queryClient.Prepare(getTodoByIDQuery)
 	if err := getTodoByID.QueryRow(id).Scan(&todo.Id, &todo.Task, &todo.Done); err != nil {
@@ -68,7 +68,7 @@ func (this *sqlTodoClient) getTodoByID(id int) (todoRecord, error) {
 
 const addTodoQuery string = `INSERT INTO "Todos" ("Task", "Done") VALUES ($1, $2) RETURNING "Id"`
 
-func (this *sqlTodoClient) addTodo(todo todoRecord) error {
+func (this *sqlTodoRepository) addTodo(todo todoRecord) error {
 	addTodo := this.queryClient.Prepare(addTodoQuery)
 	if _, err := addTodo.Exec(&todo.Task, &todo.Done); err != nil {
 		return err
@@ -79,7 +79,7 @@ func (this *sqlTodoClient) addTodo(todo todoRecord) error {
 
 const updateTodoQuery string = `UPDATE "Todos" SET "Task" = $2, "Done" = $3 WHERE "Id" = $1`
 
-func (this *sqlTodoClient) updateTodo(todo todoRecord) error {
+func (this *sqlTodoRepository) updateTodo(todo todoRecord) error {
 	updateTodo := this.queryClient.Prepare(updateTodoQuery)
 	if _, err := updateTodo.Exec(&todo.Id, &todo.Task, &todo.Done); err != nil {
 		return err
@@ -90,7 +90,7 @@ func (this *sqlTodoClient) updateTodo(todo todoRecord) error {
 
 const removeTodoQuery string = `DELETE FROM "Todos" WHERE "Id" = $1`
 
-func (this *sqlTodoClient) removeTodo(id int) error {
+func (this *sqlTodoRepository) removeTodo(id int) error {
 	removeTodo := this.queryClient.Prepare(removeTodoQuery)
 	if _, err := removeTodo.Exec(id); err != nil {
 		return err
