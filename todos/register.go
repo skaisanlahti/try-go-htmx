@@ -4,11 +4,11 @@ import (
 	"database/sql"
 	"net/http"
 
-	"github.com/skaisanlahti/try-go-htmx/common"
+	"github.com/skaisanlahti/try-go-htmx/app"
 )
 
-func middleware(handler common.RouteHandler) http.Handler {
-	return common.Log(common.RouteHandler(handler))
+func middleware(handler app.RouteHandlerFunc) http.Handler {
+	return app.NewLogger(app.NewErrorHandlerFunc(handler))
 }
 
 func RegisterHandlers(router *http.ServeMux, database *sql.DB) {

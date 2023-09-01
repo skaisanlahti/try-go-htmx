@@ -1,43 +1,34 @@
 package main
 
 import (
-	"embed"
-	"io/fs"
 	"log"
 	"net/http"
+	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/skaisanlahti/try-go-htmx/environment"
+	"github.com/skaisanlahti/try-go-htmx/app"
+	"github.com/skaisanlahti/try-go-htmx/assets"
+	"github.com/skaisanlahti/try-go-htmx/tasks"
 	"github.com/skaisanlahti/try-go-htmx/todos"
 )
 
-//go:embed public/*
-var embeddedFiles embed.FS
-
-const (
-	embeddedFilesRoot = "public"
-	assetsPath        = "/public/"
-)
-
-func mountAssetFiles() fs.FS {
-	assetFiles, err := fs.Sub(embeddedFiles, embeddedFilesRoot)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return assetFiles
-}
-
 func main() {
-	variables := environment.Read(".env.development")
-	database := environment.OpenDatabase(variables.Database)
+	variables := app.ReadEnvironment(".env.development")
+	database := app.OpenDatabase(variables.Database)
 	defer database.Close()
 
-	assetFiles := mountAssetFiles()
 	router := http.NewServeMux()
-	router.Handle(assetsPath, http.StripPrefix(assetsPath, http.FileServer(http.FS(assetFiles))))
+	assets.RegisterHandlers(router)
 	todos.RegisterHandlers(router, database)
+	tasks.RegisterHandlers(router, database)
+
+	server := http.Server{
+		Addr:         variables.Address,
+		Handler:      router,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 3 * time.Second,
+	}
 
 	log.Printf("Starting a server at %s", variables.Address)
-	log.Fatal(http.ListenAndServe(variables.Address, router))
+	log.Fatal(server.ListenAndServe())
 }

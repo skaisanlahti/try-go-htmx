@@ -1,4 +1,4 @@
-package environment
+package app
 
 import (
 	"database/sql"
@@ -12,7 +12,7 @@ type Environment struct {
 	Database string
 }
 
-func Read(filename string) Environment {
+func ReadEnvironment(filename string) Environment {
 	content, err := os.ReadFile(filename)
 	if err != nil {
 		log.Print("Env file not found")

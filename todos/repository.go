@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"sort"
 
-	"github.com/skaisanlahti/try-go-htmx/common"
+	"github.com/skaisanlahti/try-go-htmx/app"
 )
 
 type repository[T any] interface {
@@ -16,14 +16,14 @@ type repository[T any] interface {
 }
 
 type sqlTodoRepository struct {
-	queryClient *common.QueryClient
-	database    *sql.DB
+	queryService *app.QueryService
+	database     *sql.DB
 }
 
 func newSqlTodoRepository(db *sql.DB) *sqlTodoRepository {
 	return &sqlTodoRepository{
-		database:    db,
-		queryClient: common.NewQueryClient(db),
+		database:     db,
+		queryService: app.NewQueryService(db),
 	}
 }
 
@@ -31,7 +31,7 @@ const getAllTodosQuery = `SELECT * FROM "Todos"`
 
 func (this *sqlTodoRepository) list() ([]todoRecord, error) {
 	var todos []todoRecord
-	list := this.queryClient.Prepare(getAllTodosQuery)
+	list := this.queryService.Prepare(getAllTodosQuery)
 	rows, err := list.Query()
 	if err != nil {
 		return todos, err
@@ -58,7 +58,7 @@ const getTodoByIDQuery string = `SELECT * FROM "Todos" WHERE "Id" = $1`
 
 func (this *sqlTodoRepository) find(id int) (todoRecord, error) {
 	var todo todoRecord
-	find := this.queryClient.Prepare(getTodoByIDQuery)
+	find := this.queryService.Prepare(getTodoByIDQuery)
 	if err := find.QueryRow(id).Scan(&todo.Id, &todo.Task, &todo.Done); err != nil {
 		return todo, err
 	}
@@ -69,7 +69,7 @@ func (this *sqlTodoRepository) find(id int) (todoRecord, error) {
 const addTodoQuery string = `INSERT INTO "Todos" ("Task", "Done") VALUES ($1, $2) RETURNING "Id"`
 
 func (this *sqlTodoRepository) add(todo todoRecord) error {
-	add := this.queryClient.Prepare(addTodoQuery)
+	add := this.queryService.Prepare(addTodoQuery)
 	if _, err := add.Exec(&todo.Task, &todo.Done); err != nil {
 		return err
 	}
@@ -80,7 +80,7 @@ func (this *sqlTodoRepository) add(todo todoRecord) error {
 const updateTodoQuery string = `UPDATE "Todos" SET "Task" = $2, "Done" = $3 WHERE "Id" = $1`
 
 func (this *sqlTodoRepository) update(todo todoRecord) error {
-	update := this.queryClient.Prepare(updateTodoQuery)
+	update := this.queryService.Prepare(updateTodoQuery)
 	if _, err := update.Exec(&todo.Id, &todo.Task, &todo.Done); err != nil {
 		return err
 	}
@@ -91,7 +91,7 @@ func (this *sqlTodoRepository) update(todo todoRecord) error {
 const removeTodoQuery string = `DELETE FROM "Todos" WHERE "Id" = $1`
 
 func (this *sqlTodoRepository) remove(id int) error {
-	remove := this.queryClient.Prepare(removeTodoQuery)
+	remove := this.queryService.Prepare(removeTodoQuery)
 	if _, err := remove.Exec(id); err != nil {
 		return err
 	}

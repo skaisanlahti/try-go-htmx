@@ -5,11 +5,11 @@
   "targets": {
     "js": {
       "source": "./assets/ts/index.ts",
-      "distDir": "./public/js"
+      "distDir": "./assets/dist/js"
     },
     "css": {
       "source": "./assets/sass/styles.scss",
-      "distDir": "./public/css"
+      "distDir": "./assets/dist/css"
     }
   },
   "scripts": {

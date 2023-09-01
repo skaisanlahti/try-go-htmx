@@ -1,4 +1,4 @@
-package common
+package app
 
 import (
 	"database/sql"
@@ -6,20 +6,20 @@ import (
 	"sync"
 )
 
-type QueryClient struct {
+type QueryService struct {
 	database *sql.DB
 	queries  map[string]*sql.Stmt
 	locker   sync.RWMutex
 }
 
-func NewQueryClient(database *sql.DB) *QueryClient {
-	return &QueryClient{
+func NewQueryService(database *sql.DB) *QueryService {
+	return &QueryService{
 		database: database,
 		queries:  make(map[string]*sql.Stmt),
 	}
 }
 
-func (this *QueryClient) Prepare(query string) *sql.Stmt {
+func (this *QueryService) Prepare(query string) *sql.Stmt {
 	this.locker.RLock()
 	prepared, ok := this.queries[query]
 	this.locker.RUnlock()
