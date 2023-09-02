@@ -8,42 +8,41 @@ import (
 	"github.com/skaisanlahti/try-go-htmx/todos/models"
 )
 
-//go:embed page.html
+//go:embed templates/todo_page.html
 var templateFiles embed.FS
 
-func newTaskPageTemplate() *template.Template {
-	return template.Must(template.ParseFS(templateFiles, "page.html"))
+func newTodoPageTemplate() *template.Template {
+	return template.Must(template.ParseFS(templateFiles, "templates/todo_page.html"))
 }
 
 type View struct {
-	pageTemplate *template.Template
+	todoPageTemplate *template.Template
 }
 
 func NewView() *View {
-	return &View{newTaskPageTemplate()}
+	return &View{newTodoPageTemplate()}
 }
 
 func (this *View) RenderPage(response http.ResponseWriter, data models.TodoPage) error {
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
-	return this.pageTemplate.Execute(response, data)
+	return this.todoPageTemplate.Execute(response, data)
 }
 
 func (this *View) RenderForm(response http.ResponseWriter, data models.TodoPage) error {
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
-	return this.pageTemplate.ExecuteTemplate(response, "form", data)
-
+	return this.todoPageTemplate.ExecuteTemplate(response, "form", data)
 }
 
 func (this *View) RenderList(response http.ResponseWriter, data models.TodoPage) error {
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
-	return this.pageTemplate.ExecuteTemplate(response, "list", data)
+	return this.todoPageTemplate.ExecuteTemplate(response, "list", data)
 }
 
 func (this *View) RenderItem(response http.ResponseWriter, data models.Todo) error {
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
-	return this.pageTemplate.ExecuteTemplate(response, "item", data)
+	return this.todoPageTemplate.ExecuteTemplate(response, "item", data)
 }

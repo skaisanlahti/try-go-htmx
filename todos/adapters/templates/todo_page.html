@@ -9,7 +9,7 @@
       href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css"
     />
     <link rel="stylesheet" href="/dist/css/styles.css" />
-    <title>Go html test</title>
+    <title>Go htmx test</title>
   </head>
   <body>
     <main id="page" class="container">
@@ -37,7 +37,7 @@
         class="container"
         id="todos"
         hx-get="/todos/list"
-        hx-trigger="GetTodos from:body"
+        hx-trigger="GetTodoList from:body"
       >
         {{ block "list" . }} {{ range .Todos }} {{ block "item" . }}
         <div id="item-{{ .Id }}" class="todo_item">

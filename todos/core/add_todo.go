@@ -21,6 +21,6 @@ func (this *Service) AddTodo(response http.ResponseWriter, request *http.Request
 		return err
 	}
 
-	response.Header().Add("HX-Trigger", "GetTodos")
+	response.Header().Add("HX-Trigger", "GetTodoList")
 	return this.View.RenderForm(response, data)
 }
