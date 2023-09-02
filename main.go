@@ -8,7 +8,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/skaisanlahti/try-go-htmx/app"
 	"github.com/skaisanlahti/try-go-htmx/assets"
-	"github.com/skaisanlahti/try-go-htmx/tasks"
+	"github.com/skaisanlahti/try-go-htmx/todos"
 )
 
 func main() {
@@ -18,7 +18,7 @@ func main() {
 
 	router := http.NewServeMux()
 	assets.RegisterHandlers(router)
-	tasks.RegisterHandlers(router, database)
+	todos.RegisterHandlers(router, database)
 
 	server := http.Server{
 		Addr:         variables.Address,

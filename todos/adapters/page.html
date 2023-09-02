@@ -13,14 +13,15 @@
   </head>
   <body>
     <main id="page" class="container">
-      {{ block "main" . }}
-      <h1>Task list</h1>
+      <h1>Todo list</h1>
       <!-- .Key as name attribute required to stop firefox from preserving values through page refresh -->
+      {{ block "form" . }}
       <form
         id="todo-form"
         name="{{ .Key }}"
-        hx-post="/tasks/add"
-        hx-target="#page"
+        hx-post="/todos/add"
+        hx-target="#todo-form"
+        hx-swap="outerHTML"
       >
         <input
           type="text"
@@ -31,15 +32,21 @@
         <p>{{ .Error }}</p>
         <button type="submit">Add Task</button>
       </form>
-      <div class="container" id="todos">
-        {{ block "list" . }} {{ range .Tasks }} {{ block "item" . }}
+      {{ end }}
+      <div
+        class="container"
+        id="todos"
+        hx-get="/todos/list"
+        hx-trigger="GetTodos from:body"
+      >
+        {{ block "list" . }} {{ range .Todos }} {{ block "item" . }}
         <div id="item-{{ .Id }}" class="todo_item">
           <span class="todo_item-task">{{ .Task }}</span>
           {{ if .Done }}
           <button
             role="button"
             class="todo_item-toggle"
-            hx-post="/tasks/toggle?id={{ .Id }}"
+            hx-post="/todos/toggle?id={{ .Id }}"
             hx-target="#item-{{ .Id }}"
             hx-swap="outerHTML"
           >
@@ -48,7 +55,7 @@
           <button
             role="button"
             class="secondary"
-            hx-post="/tasks/remove?id={{ .Id }}"
+            hx-post="/todos/remove?id={{ .Id }}"
             hx-target="#item-{{ .Id }}"
             hx-swap="outerHTML"
           >
@@ -58,7 +65,7 @@
           <button
             role="button"
             class="todo_item-toggle outline"
-            hx-post="/tasks/toggle?id={{ .Id }}"
+            hx-post="/todos/toggle?id={{ .Id }}"
             hx-target="#item-{{ .Id }}"
             hx-swap="outerHTML"
           >
@@ -71,7 +78,6 @@
         </div>
         {{ end }} {{ end }} {{ end }}
       </div>
-      {{ end }}
     </main>
     <script type="module" src="/dist/js/index.js"></script>
   </body>

@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-func extractTaskID(url *url.URL) (int, error) {
+func extractTodoID(url *url.URL) (int, error) {
 	values := url.Query()
 	idStr := values.Get("id")
 	if idStr == "" {

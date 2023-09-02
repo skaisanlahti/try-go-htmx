@@ -3,8 +3,8 @@ package core
 import (
 	"database/sql"
 
-	"github.com/skaisanlahti/try-go-htmx/tasks/adapters"
-	"github.com/skaisanlahti/try-go-htmx/tasks/ports"
+	"github.com/skaisanlahti/try-go-htmx/todos/adapters"
+	"github.com/skaisanlahti/try-go-htmx/todos/ports"
 )
 
 type Service struct {
