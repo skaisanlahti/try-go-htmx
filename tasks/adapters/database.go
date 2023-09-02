@@ -16,7 +16,7 @@ func NewDatabase(database *sql.DB) *Database {
 
 func (this *Database) GetTasks() ([]models.Task, error) {
 	var tasks []models.Task
-	query := this.query.Prepare(`SELECT * FROM "Todos" ORDER BY "Task" ASC`)
+	query := this.query.Prepare(`SELECT * FROM todos ORDER BY task ASC`)
 	rows, err := query.Query()
 	if err != nil {
 		return tasks, err
@@ -37,7 +37,7 @@ func (this *Database) GetTasks() ([]models.Task, error) {
 
 func (this *Database) GetTaskByID(id int) (models.Task, error) {
 	var task models.Task
-	query := this.query.Prepare(`SELECT * FROM "Todos" WHERE "Id" = $1`)
+	query := this.query.Prepare(`SELECT * FROM todos WHERE todo_id = $1`)
 	if err := query.QueryRow(id).Scan(&task.Id, &task.Task, &task.Done); err != nil {
 		return task, err
 	}
@@ -46,7 +46,7 @@ func (this *Database) GetTaskByID(id int) (models.Task, error) {
 }
 
 func (this *Database) AddTask(task models.Task) error {
-	insert := this.query.Prepare(`INSERT INTO "Todos" ("Task", "Done") VALUES ($1, $2) RETURNING "Id"`)
+	insert := this.query.Prepare(`INSERT INTO todos (task, done) VALUES ($1, $2) RETURNING todo_id`)
 	if _, err := insert.Exec(&task.Task, &task.Done); err != nil {
 		return err
 	}
@@ -55,7 +55,7 @@ func (this *Database) AddTask(task models.Task) error {
 }
 
 func (this *Database) UpdateTask(task models.Task) error {
-	update := this.query.Prepare(`UPDATE "Todos" SET "Task" = $2, "Done" = $3 WHERE "Id" = $1`)
+	update := this.query.Prepare(`UPDATE todos SET task = $2, done = $3 WHERE todo_id = $1`)
 	if _, err := update.Exec(&task.Id, &task.Task, &task.Done); err != nil {
 		return err
 	}

@@ -9,7 +9,6 @@ import (
 	"github.com/skaisanlahti/try-go-htmx/app"
 	"github.com/skaisanlahti/try-go-htmx/assets"
 	"github.com/skaisanlahti/try-go-htmx/tasks"
-	"github.com/skaisanlahti/try-go-htmx/todos"
 )
 
 func main() {
@@ -19,7 +18,6 @@ func main() {
 
 	router := http.NewServeMux()
 	assets.RegisterHandlers(router)
-	todos.RegisterHandlers(router, database)
 	tasks.RegisterHandlers(router, database)
 
 	server := http.Server{

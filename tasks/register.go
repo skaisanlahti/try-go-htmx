@@ -14,8 +14,11 @@ func middleware(handler app.RouteHandlerFunc) http.Handler {
 
 func RegisterHandlers(router *http.ServeMux, database *sql.DB) {
 	service := core.NewService(database)
-	router.Handle("/tasks/remove", middleware(service.RemoveTask))
-	router.Handle("/tasks/toggle", middleware(service.ToggleTask))
-	router.Handle("/tasks/add", middleware(service.AddTask))
-	router.Handle("/tasks", middleware(service.DisplayPage))
+	router.Handle("/todos/remove", middleware(service.RemoveTask))
+	router.Handle("/todos/toggle", middleware(service.ToggleTask))
+	router.Handle("/todos/add", middleware(service.AddTask))
+	router.Handle("/todos", middleware(service.DisplayPage))
+	router.HandleFunc("/", func(response http.ResponseWriter, request *http.Request) {
+		http.Redirect(response, request, "/todos", http.StatusMovedPermanently)
+	})
 }
