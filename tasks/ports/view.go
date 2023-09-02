@@ -10,4 +10,5 @@ type View interface {
 	RenderPage(response http.ResponseWriter, taskPage models.TaskPage) error
 	RenderMain(response http.ResponseWriter, taskPage models.TaskPage) error
 	RenderList(response http.ResponseWriter, taskPage models.TaskPage) error
+	RenderItem(response http.ResponseWriter, task models.Task) error
 }

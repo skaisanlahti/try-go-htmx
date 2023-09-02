@@ -1,0 +1,14 @@
+version: "3"
+
+services:
+  db:
+    image: postgres:latest
+    container_name: try-go-htmx-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: dbpassword
+      POSTGRES_DB: try-go-htmx-db
+    volumes:
+      - ./db-data/:/var/lib/postgresql/data/

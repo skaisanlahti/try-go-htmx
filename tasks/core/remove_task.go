@@ -2,8 +2,6 @@ package core
 
 import (
 	"net/http"
-
-	"github.com/skaisanlahti/try-go-htmx/tasks/models"
 )
 
 func (this *Service) RemoveTask(response http.ResponseWriter, request *http.Request) error {
@@ -19,13 +17,6 @@ func (this *Service) RemoveTask(response http.ResponseWriter, request *http.Requ
 		return err
 	}
 
-	tasks, err := this.Database.GetTasks()
-	if err != nil {
-		response.WriteHeader(http.StatusInternalServerError)
-		return err
-	}
-
-	data := models.NewTaskPage(tasks)
 	response.WriteHeader(http.StatusOK)
-	return this.View.RenderList(response, data)
+	return nil
 }

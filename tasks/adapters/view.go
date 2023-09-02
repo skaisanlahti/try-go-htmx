@@ -35,3 +35,7 @@ func (this *View) RenderMain(response http.ResponseWriter, data models.TaskPage)
 func (this *View) RenderList(response http.ResponseWriter, data models.TaskPage) error {
 	return this.pageTemplate.ExecuteTemplate(response, "list", data)
 }
+
+func (this *View) RenderItem(response http.ResponseWriter, data models.Task) error {
+	return this.pageTemplate.ExecuteTemplate(response, "item", data)
+}

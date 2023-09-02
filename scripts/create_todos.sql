@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS public."Todos"
+(
+    "Id" SERIAL NOT NULL PRIMARY KEY,
+    "Task" TEXT NOT NULL,
+    "Done" BOOLEAN NOT NULL DEFAULT false
+);
