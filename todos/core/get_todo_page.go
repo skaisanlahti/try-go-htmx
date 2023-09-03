@@ -6,7 +6,7 @@ import (
 	"github.com/skaisanlahti/try-go-htmx/todos/models"
 )
 
-func (this *Service) GetTodoPage(response http.ResponseWriter, request *http.Request) error {
+func (this *Controller) GetTodoPage(response http.ResponseWriter, request *http.Request) error {
 	todos, err := this.Database.GetTodos()
 	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)

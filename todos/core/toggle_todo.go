@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-func (this *Service) ToggleTodo(response http.ResponseWriter, request *http.Request) error {
+func (this *Controller) ToggleTodo(response http.ResponseWriter, request *http.Request) error {
 	id, err := extractTodoID(request.URL)
 	if err != nil {
 		response.WriteHeader(http.StatusBadRequest)

@@ -7,11 +7,11 @@ import (
 	"github.com/skaisanlahti/try-go-htmx/todos/ports"
 )
 
-type Service struct {
+type Controller struct {
 	Database ports.Database
 	View     ports.View
 }
 
-func NewService(database *sql.DB) *Service {
-	return &Service{adapters.NewDatabase(database), adapters.NewView()}
+func NewController(database *sql.DB) *Controller {
+	return &Controller{adapters.NewDatabase(database), adapters.NewView()}
 }

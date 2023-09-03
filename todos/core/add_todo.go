@@ -6,7 +6,7 @@ import (
 	"github.com/skaisanlahti/try-go-htmx/todos/models"
 )
 
-func (this *Service) AddTodo(response http.ResponseWriter, request *http.Request) error {
+func (this *Controller) AddTodo(response http.ResponseWriter, request *http.Request) error {
 	task := request.FormValue("task")
 	data := models.NewTodoPage()
 	if task == "" {

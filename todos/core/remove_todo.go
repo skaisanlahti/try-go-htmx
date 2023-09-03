@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-func (this *Service) RemoveTodo(response http.ResponseWriter, request *http.Request) error {
+func (this *Controller) RemoveTodo(response http.ResponseWriter, request *http.Request) error {
 	id, err := extractTodoID(request.URL)
 	if err != nil {
 		response.WriteHeader(http.StatusBadRequest)
