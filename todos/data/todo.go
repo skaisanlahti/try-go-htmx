@@ -1,4 +1,4 @@
-package models
+package data
 
 type Todo struct {
 	Id   int

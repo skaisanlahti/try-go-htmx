@@ -6,19 +6,20 @@ import (
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/skaisanlahti/try-go-htmx/app"
 	"github.com/skaisanlahti/try-go-htmx/assets"
+	"github.com/skaisanlahti/try-go-htmx/infrastructure"
 	"github.com/skaisanlahti/try-go-htmx/todos"
 )
 
 func main() {
-	variables := app.ReadEnvironment(".env.development")
-	database := app.OpenDatabase(variables.Database)
+	variables := infrastructure.ReadEnvironment(".env.development")
+	database := infrastructure.OpenDatabase(variables.Database)
 	defer database.Close()
 
 	router := http.NewServeMux()
 	assets.RegisterHandlers(router)
-	todos.RegisterHandlers(router, database)
+	templates := assets.GetTemplates()
+	todos.RegisterHandlers(router, database, templates.TodoPageTemplate)
 
 	server := http.Server{
 		Addr:         variables.Address,

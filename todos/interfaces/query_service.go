@@ -1,7 +1,7 @@
-package ports
+package interfaces
 
 import "database/sql"
 
-type Query interface {
+type QueryService interface {
 	Prepare(query string) *sql.Stmt
 }
