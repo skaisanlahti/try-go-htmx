@@ -14,16 +14,16 @@ func middleware(handler infrastructure.RouteHandlerFunc) http.Handler {
 }
 
 func RegisterHandlers(router *http.ServeMux, database *sql.DB, todoPageTemplate *template.Template) {
-	queryService := services.NewSqlQueryService(database)
-	dataService := services.NewPostgreSqlDataService(queryService)
-	htmlService := services.NewHtmlTemplateService(todoPageTemplate)
-	todoHttpService := services.NewTodoHttpService(dataService, htmlService)
+	preparer := services.NewQueryPreparer(database)
+	storage := services.NewPostgreSqlStorage(preparer)
+	renderer := services.NewHtmlRenderer(todoPageTemplate)
+	handler := services.NewHttpHandler(storage, renderer)
 
-	router.Handle("/todos/remove", middleware(todoHttpService.RemoveTodo))
-	router.Handle("/todos/toggle", middleware(todoHttpService.ToggleTodo))
-	router.Handle("/todos/add", middleware(todoHttpService.AddTodo))
-	router.Handle("/todos/list", middleware(todoHttpService.GetTodoList))
-	router.Handle("/todos", middleware(todoHttpService.GetTodoPage))
+	router.Handle("/todos/remove", middleware(handler.RemoveTodo))
+	router.Handle("/todos/toggle", middleware(handler.ToggleTodo))
+	router.Handle("/todos/add", middleware(handler.AddTodo))
+	router.Handle("/todos/list", middleware(handler.GetTodoList))
+	router.Handle("/todos", middleware(handler.GetTodoPage))
 	router.HandleFunc("/", func(response http.ResponseWriter, request *http.Request) {
 		http.Redirect(response, request, "/todos", http.StatusMovedPermanently)
 	})

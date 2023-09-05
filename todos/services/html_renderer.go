@@ -1,4 +1,4 @@
-package services
+package procedures
 
 import (
 	"html/template"
@@ -7,15 +7,15 @@ import (
 	"github.com/skaisanlahti/try-go-htmx/todos/data"
 )
 
-type HtmlTemplateService struct {
+type HtmlRenderer struct {
 	todoPageTemplate *template.Template
 }
 
-func NewHtmlTemplateService(todoPageTemplate *template.Template) *HtmlTemplateService {
-	return &HtmlTemplateService{todoPageTemplate}
+func NewHtmlRenderer(todoPageTemplate *template.Template) *HtmlRenderer {
+	return &HtmlRenderer{todoPageTemplate}
 }
 
-func (this *HtmlTemplateService) RenderPage(response http.ResponseWriter, todos []data.Todo) error {
+func (this *HtmlRenderer) RenderPage(response http.ResponseWriter, todos []data.Todo) error {
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
 	templateData := data.NewTodoPage()
@@ -23,7 +23,7 @@ func (this *HtmlTemplateService) RenderPage(response http.ResponseWriter, todos 
 	return this.todoPageTemplate.Execute(response, templateData)
 }
 
-func (this *HtmlTemplateService) RenderList(response http.ResponseWriter, todos []data.Todo) error {
+func (this *HtmlRenderer) RenderList(response http.ResponseWriter, todos []data.Todo) error {
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
 	templateData := data.NewTodoPage()
@@ -31,14 +31,14 @@ func (this *HtmlTemplateService) RenderList(response http.ResponseWriter, todos 
 	return this.todoPageTemplate.ExecuteTemplate(response, "list", templateData)
 }
 
-func (this *HtmlTemplateService) RenderEmptyForm(response http.ResponseWriter) error {
+func (this *HtmlRenderer) RenderEmptyForm(response http.ResponseWriter) error {
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
 	templateData := data.NewTodoPage()
 	return this.todoPageTemplate.ExecuteTemplate(response, "form", templateData)
 }
 
-func (this *HtmlTemplateService) RenderErrorForm(response http.ResponseWriter, errorMessage string) error {
+func (this *HtmlRenderer) RenderErrorForm(response http.ResponseWriter, errorMessage string) error {
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
 	templateData := data.NewTodoPage()
@@ -46,7 +46,7 @@ func (this *HtmlTemplateService) RenderErrorForm(response http.ResponseWriter, e
 	return this.todoPageTemplate.ExecuteTemplate(response, "form", templateData)
 }
 
-func (this *HtmlTemplateService) RenderItem(response http.ResponseWriter, todo data.Todo) error {
+func (this *HtmlRenderer) RenderItem(response http.ResponseWriter, todo data.Todo) error {
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
 	return this.todoPageTemplate.ExecuteTemplate(response, "item", todo)
