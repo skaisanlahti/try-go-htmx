@@ -1,4 +1,4 @@
-package procedures
+package services
 
 import (
 	"errors"
