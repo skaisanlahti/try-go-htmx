@@ -50,7 +50,7 @@
           <button
             role="button"
             class="todo_item-toggle"
-            hx-post="/todos/toggle?id={{ .Id }}"
+            hx-patch="/todos/toggle?id={{ .Id }}"
             hx-target="#item-{{ .Id }}"
             hx-swap="outerHTML settle:0ms"
           >
@@ -59,7 +59,7 @@
           <button
             role="button"
             class="secondary"
-            hx-post="/todos/remove?id={{ .Id }}"
+            hx-delete="/todos/remove?id={{ .Id }}"
             hx-target="#item-{{ .Id }}"
             hx-swap="outerHTML swap:1000ms"
           >
@@ -69,7 +69,7 @@
           <button
             role="button"
             class="todo_item-toggle outline"
-            hx-post="/todos/toggle?id={{ .Id }}"
+            hx-patch="/todos/toggle?id={{ .Id }}"
             hx-target="#item-{{ .Id }}"
             hx-swap="outerHTML settle:0ms"
           >

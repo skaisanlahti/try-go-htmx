@@ -1,4 +1,4 @@
-package infrastructure
+package middleware
 
 import (
 	"log"
@@ -20,15 +20,15 @@ type Logger struct {
 	next http.Handler
 }
 
-func NewLogger(handler http.Handler) *Logger {
+func Log(handler http.Handler) *Logger {
 	return &Logger{next: handler}
 }
 
 func (this *Logger) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 	before := time.Now().UnixMilli()
-	responseWithStatus := &statusWriter{ResponseWriter: response}
+	responseProxy := &statusWriter{ResponseWriter: response}
 
-	this.next.ServeHTTP(responseWithStatus, request)
+	this.next.ServeHTTP(responseProxy, request)
 
 	after := time.Now().UnixMilli()
 	duration := after - before
@@ -36,7 +36,7 @@ func (this *Logger) ServeHTTP(response http.ResponseWriter, request *http.Reques
 		"%s %s | status %d | duration %d ms",
 		request.Method,
 		request.URL.Path,
-		responseWithStatus.statusCode,
+		responseProxy.statusCode,
 		duration,
 	)
 }

@@ -5,25 +5,24 @@ import (
 	"html/template"
 	"net/http"
 
-	"github.com/skaisanlahti/try-go-htmx/infrastructure"
-	"github.com/skaisanlahti/try-go-htmx/todos/services"
+	"github.com/skaisanlahti/try-go-htmx/middleware"
+	"github.com/skaisanlahti/try-go-htmx/todos/handlers"
+	"github.com/skaisanlahti/try-go-htmx/todos/psql"
 )
 
-func middleware(handler infrastructure.RouteHandlerFunc) http.Handler {
-	return infrastructure.NewLogger(infrastructure.NewErrorHandlerFunc(handler))
-}
+func RegisterHandlers(router *http.ServeMux, database *sql.DB, todoPage *template.Template) {
+	repository := psql.NewTodoRepository(database)
+	getTodoPage := handlers.NewGetTodoPageHandler(repository, handlers.NewTemplateGetTodoPageView(todoPage))
+	getTodoList := handlers.NewGetTodoListHandler(repository, handlers.NewGetTodoListView(todoPage))
+	addTodo := handlers.NewAddTodoHandler(repository, handlers.NewTemplateAddTodoView(todoPage))
+	toggleTodo := handlers.NewToggleTodoHandler(repository, handlers.NewTemplateToggleTodoView(todoPage))
+	removeTodo := handlers.NewRemoveTodoHandler(repository)
 
-func RegisterHandlers(router *http.ServeMux, database *sql.DB, todoPageTemplate *template.Template) {
-	preparer := services.NewQueryPreparer(database)
-	storage := services.NewPostgreSqlStorage(preparer)
-	renderer := services.NewHtmlRenderer(todoPageTemplate)
-	handler := services.NewHttpHandler(storage, renderer)
-
-	router.Handle("/todos/remove", middleware(handler.RemoveTodo))
-	router.Handle("/todos/toggle", middleware(handler.ToggleTodo))
-	router.Handle("/todos/add", middleware(handler.AddTodo))
-	router.Handle("/todos/list", middleware(handler.GetTodoList))
-	router.Handle("/todos", middleware(handler.GetTodoPage))
+	router.Handle("/todos/remove", middleware.Log(removeTodo))
+	router.Handle("/todos/toggle", middleware.Log(toggleTodo))
+	router.Handle("/todos/add", middleware.Log(addTodo))
+	router.Handle("/todos/list", middleware.Log(getTodoList))
+	router.Handle("/todos", middleware.Log(getTodoPage))
 	router.HandleFunc("/", func(response http.ResponseWriter, request *http.Request) {
 		http.Redirect(response, request, "/todos", http.StatusMovedPermanently)
 	})

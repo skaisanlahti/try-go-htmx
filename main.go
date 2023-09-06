@@ -17,9 +17,9 @@ func main() {
 	defer database.Close()
 
 	router := http.NewServeMux()
-	assets.RegisterHandlers(router)
 	templates := assets.GetTemplates()
-	todos.RegisterHandlers(router, database, templates.TodoPageTemplate)
+	assets.RegisterHandlers(router)
+	todos.RegisterHandlers(router, database, templates.TodoPage)
 
 	server := http.Server{
 		Addr:         variables.Address,
@@ -29,5 +29,5 @@ func main() {
 	}
 
 	log.Printf("Starting a server at %s", variables.Address)
-	log.Fatal(server.ListenAndServe())
+	log.Panic(server.ListenAndServe())
 }

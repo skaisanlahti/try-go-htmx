@@ -29,7 +29,7 @@ func RegisterHandlers(router *http.ServeMux) {
 }
 
 type HtmlTemplates struct {
-	TodoPageTemplate *template.Template
+	TodoPage *template.Template
 }
 
 func GetTemplates() *HtmlTemplates {
