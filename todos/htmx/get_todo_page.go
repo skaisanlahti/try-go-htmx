@@ -27,9 +27,9 @@ func NewGetTodoPageHandler(repository GetTodoPageRepository, view GetTodoPageVie
 	return &GetTodoPageHandler{repository, view}
 }
 
-func (this *GetTodoPageHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
-	todos := this.repository.GetTodos()
-	html := this.view.RenderTodoPage(todos)
+func (handler *GetTodoPageHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
+	todos := handler.repository.GetTodos()
+	html := handler.view.RenderTodoPage(todos)
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
 	response.Write(html)
@@ -46,14 +46,14 @@ type HtmxGetTodoPageView struct {
 	todoPage *template.Template
 }
 
-func NewHtmxGetTodoPageView(view *template.Template) *HtmxGetTodoPageView {
-	return &HtmxGetTodoPageView{view}
+func NewHtmxGetTodoPageView(todoPage *template.Template) *HtmxGetTodoPageView {
+	return &HtmxGetTodoPageView{todoPage}
 }
 
-func (this *HtmxGetTodoPageView) RenderTodoPage(todos []domain.Todo) []byte {
+func (view *HtmxGetTodoPageView) RenderTodoPage(todos []domain.Todo) []byte {
 	templateData := TodoPage{Key: time.Now().UnixMilli(), Todos: todos}
 	buffer := &bytes.Buffer{}
-	err := this.todoPage.Execute(buffer, templateData)
+	err := view.todoPage.Execute(buffer, templateData)
 	if err != nil {
 		log.Panicln(err.Error())
 	}

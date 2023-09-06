@@ -21,20 +21,20 @@ func NewRemoveTodoHandler(
 	return &RemoveTodoHandler{repository}
 }
 
-func (this *RemoveTodoHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
+func (handler *RemoveTodoHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 	id, err := extractTodoId(request.URL)
 	if err != nil {
 		response.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	_, err = this.repository.GetTodoById(id)
+	_, err = handler.repository.GetTodoById(id)
 	if err != nil {
 		response.WriteHeader(http.StatusNotFound)
 		return
 	}
 
-	if err = this.repository.RemoveTodo(id); err != nil {
+	if err = handler.repository.RemoveTodo(id); err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		return
 	}

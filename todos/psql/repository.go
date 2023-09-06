@@ -8,7 +8,7 @@ import (
 )
 
 type TodoRepository struct {
-	database *sql.DB
+	Database *sql.DB
 }
 
 func NewTodoRepository(database *sql.DB) *TodoRepository {
@@ -17,9 +17,9 @@ func NewTodoRepository(database *sql.DB) *TodoRepository {
 
 const selectTodos string = `SELECT * FROM "Todos" ORDER BY "Task" ASC`
 
-func (this *TodoRepository) GetTodos() []domain.Todo {
+func (repository *TodoRepository) GetTodos() []domain.Todo {
 	var todos []domain.Todo
-	rows, err := this.database.Query(selectTodos)
+	rows, err := repository.Database.Query(selectTodos)
 	if err != nil {
 		log.Println(err.Error())
 		return todos
@@ -41,9 +41,9 @@ func (this *TodoRepository) GetTodos() []domain.Todo {
 
 const selectTodoById string = `SELECT * FROM "Todos" WHERE "Id" = $1`
 
-func (this *TodoRepository) GetTodoById(id int) (domain.Todo, error) {
+func (repository *TodoRepository) GetTodoById(id int) (domain.Todo, error) {
 	var todo domain.Todo
-	row := this.database.QueryRow(selectTodoById, id)
+	row := repository.Database.QueryRow(selectTodoById, id)
 	if err := row.Scan(&todo.Id, &todo.Task, &todo.Done); err != nil {
 		log.Println(err.Error())
 		return todo, err
@@ -54,8 +54,8 @@ func (this *TodoRepository) GetTodoById(id int) (domain.Todo, error) {
 
 const insertTodo string = `INSERT INTO "Todos" ("Task", "Done") VALUES ($1, $2)`
 
-func (this *TodoRepository) AddTodo(todo domain.Todo) error {
-	if _, err := this.database.Exec(insertTodo, &todo.Task, &todo.Done); err != nil {
+func (repository *TodoRepository) AddTodo(todo domain.Todo) error {
+	if _, err := repository.Database.Exec(insertTodo, &todo.Task, &todo.Done); err != nil {
 		log.Println(err.Error())
 		return err
 	}
@@ -65,8 +65,8 @@ func (this *TodoRepository) AddTodo(todo domain.Todo) error {
 
 const updateTodo string = `UPDATE "Todos" SET "Task" = $2, "Done" = $3 WHERE "Id" = $1`
 
-func (this *TodoRepository) UpdateTodo(todo domain.Todo) error {
-	if _, err := this.database.Exec(updateTodo, &todo.Id, &todo.Task, &todo.Done); err != nil {
+func (repository *TodoRepository) UpdateTodo(todo domain.Todo) error {
+	if _, err := repository.Database.Exec(updateTodo, &todo.Id, &todo.Task, &todo.Done); err != nil {
 		log.Println(err.Error())
 		return err
 	}
@@ -76,8 +76,8 @@ func (this *TodoRepository) UpdateTodo(todo domain.Todo) error {
 
 const deleteTodo string = `DELETE FROM "Todos" WHERE "Id" = $1`
 
-func (this *TodoRepository) RemoveTodo(id int) error {
-	if _, err := this.database.Exec(deleteTodo, id); err != nil {
+func (repository *TodoRepository) RemoveTodo(id int) error {
+	if _, err := repository.Database.Exec(deleteTodo, id); err != nil {
 		log.Println(err.Error())
 		return err
 	}

@@ -30,14 +30,14 @@ func NewToggleTodoHandler(
 	return &ToggleTodoHandler{repository, view}
 }
 
-func (this *ToggleTodoHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
+func (handler *ToggleTodoHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 	id, err := extractTodoId(request.URL)
 	if err != nil {
 		response.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	todo, err := this.repository.GetTodoById(id)
+	todo, err := handler.repository.GetTodoById(id)
 	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		return
@@ -45,12 +45,12 @@ func (this *ToggleTodoHandler) ServeHTTP(response http.ResponseWriter, request *
 
 	newTodo := domain.ToggleTodo(todo)
 
-	if err = this.repository.UpdateTodo(newTodo); err != nil {
+	if err = handler.repository.UpdateTodo(newTodo); err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	html := this.view.RenderTodoItem(todo)
+	html := handler.view.RenderTodoItem(todo)
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.Write(html)
 }
@@ -59,13 +59,13 @@ type HtmxToggleTodoView struct {
 	todoPage *template.Template
 }
 
-func NewHtmxToggleTodoView(view *template.Template) *HtmxToggleTodoView {
-	return &HtmxToggleTodoView{view}
+func NewHtmxToggleTodoView(todoPage *template.Template) *HtmxToggleTodoView {
+	return &HtmxToggleTodoView{todoPage}
 }
 
-func (this *HtmxToggleTodoView) RenderTodoItem(todo domain.Todo) []byte {
+func (view *HtmxToggleTodoView) RenderTodoItem(todo domain.Todo) []byte {
 	buffer := &bytes.Buffer{}
-	err := this.todoPage.ExecuteTemplate(buffer, "item", todo)
+	err := view.todoPage.ExecuteTemplate(buffer, "item", todo)
 	if err != nil {
 		log.Panicln(err.Error())
 	}

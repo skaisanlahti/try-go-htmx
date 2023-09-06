@@ -27,22 +27,22 @@ func NewAddTodoHandler(repository AddTodoRepository, view AddTodoView) *AddTodoH
 	return &AddTodoHandler{repository, view}
 }
 
-func (this *AddTodoHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
+func (handler *AddTodoHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 	task := request.FormValue("task")
 	newTodo, err := domain.NewTodo(task)
 	if err != nil {
-		html := this.view.RenderTodoForm(task, err.Error())
+		html := handler.view.RenderTodoForm(task, err.Error())
 		response.Header().Add("Content-type", "text/html; charset=utf-8")
 		response.Write(html)
 		return
 	}
 
-	if err := this.repository.AddTodo(newTodo); err != nil {
+	if err := handler.repository.AddTodo(newTodo); err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	html := this.view.RenderTodoForm("", "")
+	html := handler.view.RenderTodoForm("", "")
 	response.Header().Add("HX-Trigger", "GetTodoList")
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.Write(html)
@@ -58,14 +58,14 @@ type HtmxAddTodoView struct {
 	todoPage *template.Template
 }
 
-func NewHtmxAddTodoView(view *template.Template) *HtmxAddTodoView {
-	return &HtmxAddTodoView{view}
+func NewHtmxAddTodoView(todoPage *template.Template) *HtmxAddTodoView {
+	return &HtmxAddTodoView{todoPage}
 }
 
-func (this *HtmxAddTodoView) RenderTodoForm(task string, taskError string) []byte {
+func (view *HtmxAddTodoView) RenderTodoForm(task string, taskError string) []byte {
 	templateData := TodoForm{Key: time.Now().UnixMilli(), Task: task, Error: taskError}
 	buffer := &bytes.Buffer{}
-	err := this.todoPage.ExecuteTemplate(buffer, "form", templateData)
+	err := view.todoPage.ExecuteTemplate(buffer, "form", templateData)
 	if err != nil {
 		log.Panicln(err.Error())
 	}

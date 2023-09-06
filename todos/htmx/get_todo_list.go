@@ -26,9 +26,9 @@ func NewGetTodoListHandler(repository GetTodoListRepository, view GetTodoListVie
 	return &GetTodoListHandler{repository, view}
 }
 
-func (this *GetTodoListHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
-	todos := this.repository.GetTodos()
-	html := this.view.RenderTodoList(todos)
+func (handler *GetTodoListHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
+	todos := handler.repository.GetTodos()
+	html := handler.view.RenderTodoList(todos)
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.Write(html)
 }
@@ -41,14 +41,14 @@ type HtmxGetTodoListView struct {
 	todoPage *template.Template
 }
 
-func NewHtmxGetTodoListView(todoPageTemplate *template.Template) *HtmxGetTodoListView {
-	return &HtmxGetTodoListView{todoPageTemplate}
+func NewHtmxGetTodoListView(todoPage *template.Template) *HtmxGetTodoListView {
+	return &HtmxGetTodoListView{todoPage}
 }
 
-func (this *HtmxGetTodoListView) RenderTodoList(todos []domain.Todo) []byte {
+func (view *HtmxGetTodoListView) RenderTodoList(todos []domain.Todo) []byte {
 	templateData := TodoList{Todos: todos}
 	buffer := &bytes.Buffer{}
-	err := this.todoPage.ExecuteTemplate(buffer, "list", templateData)
+	err := view.todoPage.ExecuteTemplate(buffer, "list", templateData)
 	if err != nil {
 		log.Panicln(err.Error())
 	}
