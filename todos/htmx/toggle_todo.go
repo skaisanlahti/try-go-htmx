@@ -1,4 +1,4 @@
-package handlers
+package htmx
 
 import (
 	"bytes"
@@ -55,15 +55,15 @@ func (this *ToggleTodoHandler) ServeHTTP(response http.ResponseWriter, request *
 	response.Write(html)
 }
 
-type TemplateToggleTodoView struct {
+type HtmxToggleTodoView struct {
 	todoPage *template.Template
 }
 
-func NewTemplateToggleTodoView(view *template.Template) *TemplateToggleTodoView {
-	return &TemplateToggleTodoView{view}
+func NewHtmxToggleTodoView(view *template.Template) *HtmxToggleTodoView {
+	return &HtmxToggleTodoView{view}
 }
 
-func (this *TemplateToggleTodoView) RenderTodoItem(todo domain.Todo) []byte {
+func (this *HtmxToggleTodoView) RenderTodoItem(todo domain.Todo) []byte {
 	buffer := &bytes.Buffer{}
 	err := this.todoPage.ExecuteTemplate(buffer, "item", todo)
 	if err != nil {

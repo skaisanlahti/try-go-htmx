@@ -19,7 +19,7 @@ const (
 	path              = "/dist/"
 )
 
-func RegisterHandlers(router *http.ServeMux) {
+func MapAssetHandlers(router *http.ServeMux) {
 	assetFiles, err := fs.Sub(embeddedFiles, embeddedFilesRoot)
 	if err != nil {
 		log.Fatal(err)
@@ -32,7 +32,7 @@ type HtmlTemplates struct {
 	TodoPage *template.Template
 }
 
-func GetTemplates() *HtmlTemplates {
+func ParseTemplates() *HtmlTemplates {
 	todoPage := template.Must(template.ParseFS(templateFiles, "templates/todo_page.html"))
 	return &HtmlTemplates{todoPage}
 }

@@ -1,4 +1,4 @@
-package handlers
+package htmx
 
 import (
 	"bytes"
@@ -54,15 +54,15 @@ type TodoForm struct {
 	Error string
 }
 
-type TemplateAddTodoView struct {
+type HtmxAddTodoView struct {
 	todoPage *template.Template
 }
 
-func NewTemplateAddTodoView(view *template.Template) *TemplateAddTodoView {
-	return &TemplateAddTodoView{view}
+func NewHtmxAddTodoView(view *template.Template) *HtmxAddTodoView {
+	return &HtmxAddTodoView{view}
 }
 
-func (this *TemplateAddTodoView) RenderTodoForm(task string, taskError string) []byte {
+func (this *HtmxAddTodoView) RenderTodoForm(task string, taskError string) []byte {
 	templateData := TodoForm{Key: time.Now().UnixMilli(), Task: task, Error: taskError}
 	buffer := &bytes.Buffer{}
 	err := this.todoPage.ExecuteTemplate(buffer, "form", templateData)

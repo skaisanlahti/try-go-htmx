@@ -1,4 +1,4 @@
-package handlers
+package htmx
 
 import (
 	"bytes"
@@ -37,15 +37,15 @@ type TodoList struct {
 	Todos []domain.Todo
 }
 
-type TemplateGetTodoListView struct {
+type HtmxGetTodoListView struct {
 	todoPage *template.Template
 }
 
-func NewGetTodoListView(todoPageTemplate *template.Template) *TemplateGetTodoListView {
-	return &TemplateGetTodoListView{todoPageTemplate}
+func NewHtmxGetTodoListView(todoPageTemplate *template.Template) *HtmxGetTodoListView {
+	return &HtmxGetTodoListView{todoPageTemplate}
 }
 
-func (this *TemplateGetTodoListView) RenderTodoList(todos []domain.Todo) []byte {
+func (this *HtmxGetTodoListView) RenderTodoList(todos []domain.Todo) []byte {
 	templateData := TodoList{Todos: todos}
 	buffer := &bytes.Buffer{}
 	err := this.todoPage.ExecuteTemplate(buffer, "list", templateData)

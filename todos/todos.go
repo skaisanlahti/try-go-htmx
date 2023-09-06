@@ -6,17 +6,17 @@ import (
 	"net/http"
 
 	"github.com/skaisanlahti/try-go-htmx/middleware"
-	"github.com/skaisanlahti/try-go-htmx/todos/handlers"
+	"github.com/skaisanlahti/try-go-htmx/todos/htmx"
 	"github.com/skaisanlahti/try-go-htmx/todos/psql"
 )
 
-func RegisterHandlers(router *http.ServeMux, database *sql.DB, todoPage *template.Template) {
+func MapHtmxHandlers(router *http.ServeMux, database *sql.DB, todoPage *template.Template) {
 	repository := psql.NewTodoRepository(database)
-	getTodoPage := handlers.NewGetTodoPageHandler(repository, handlers.NewTemplateGetTodoPageView(todoPage))
-	getTodoList := handlers.NewGetTodoListHandler(repository, handlers.NewGetTodoListView(todoPage))
-	addTodo := handlers.NewAddTodoHandler(repository, handlers.NewTemplateAddTodoView(todoPage))
-	toggleTodo := handlers.NewToggleTodoHandler(repository, handlers.NewTemplateToggleTodoView(todoPage))
-	removeTodo := handlers.NewRemoveTodoHandler(repository)
+	removeTodo := htmx.NewRemoveTodoHandler(repository)
+	toggleTodo := htmx.NewToggleTodoHandler(repository, htmx.NewHtmxToggleTodoView(todoPage))
+	addTodo := htmx.NewAddTodoHandler(repository, htmx.NewHtmxAddTodoView(todoPage))
+	getTodoList := htmx.NewGetTodoListHandler(repository, htmx.NewHtmxGetTodoListView(todoPage))
+	getTodoPage := htmx.NewGetTodoPageHandler(repository, htmx.NewHtmxGetTodoPageView(todoPage))
 
 	router.Handle("/todos/remove", middleware.Log(removeTodo))
 	router.Handle("/todos/toggle", middleware.Log(toggleTodo))

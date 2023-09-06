@@ -1,4 +1,4 @@
-package handlers
+package htmx
 
 import (
 	"bytes"
@@ -42,15 +42,15 @@ type TodoPage struct {
 	Todos []domain.Todo
 }
 
-type TemplateGetTodoPageView struct {
+type HtmxGetTodoPageView struct {
 	todoPage *template.Template
 }
 
-func NewTemplateGetTodoPageView(view *template.Template) *TemplateGetTodoPageView {
-	return &TemplateGetTodoPageView{view}
+func NewHtmxGetTodoPageView(view *template.Template) *HtmxGetTodoPageView {
+	return &HtmxGetTodoPageView{view}
 }
 
-func (this *TemplateGetTodoPageView) RenderTodoPage(todos []domain.Todo) []byte {
+func (this *HtmxGetTodoPageView) RenderTodoPage(todos []domain.Todo) []byte {
 	templateData := TodoPage{Key: time.Now().UnixMilli(), Todos: todos}
 	buffer := &bytes.Buffer{}
 	err := this.todoPage.Execute(buffer, templateData)
