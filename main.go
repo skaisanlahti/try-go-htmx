@@ -17,9 +17,8 @@ func main() {
 	defer database.Close()
 
 	router := http.NewServeMux()
-	templates := assets.ParseTemplates()
 	assets.MapAssetHandlers(router)
-	todos.MapHtmxHandlers(router, database, templates.TodoPage)
+	todos.MapHtmxHandlers(router, database)
 
 	server := http.Server{
 		Addr:         variables.Address,

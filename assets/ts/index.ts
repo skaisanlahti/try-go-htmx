@@ -1,4 +1,5 @@
 import htmx from "htmx.org";
+import { hello } from "../../todos/templates/todo_page";
 declare global {
   interface Window {
     htmx: typeof htmx;
@@ -6,4 +7,4 @@ declare global {
 }
 
 window.htmx = htmx;
-console.log("scripts loaded", new Date().toLocaleTimeString());
+hello();

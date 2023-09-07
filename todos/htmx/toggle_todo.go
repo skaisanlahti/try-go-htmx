@@ -50,7 +50,7 @@ func (handler *ToggleTodoHandler) ServeHTTP(response http.ResponseWriter, reques
 		return
 	}
 
-	html := handler.view.RenderTodoItem(todo)
+	html := handler.view.RenderTodoItem(newTodo)
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.Write(html)
 }

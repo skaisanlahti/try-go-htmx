@@ -2,7 +2,6 @@ package assets
 
 import (
 	"embed"
-	"html/template"
 	"io/fs"
 	"log"
 	"net/http"
@@ -10,9 +9,6 @@ import (
 
 //go:embed dist/*
 var embeddedFiles embed.FS
-
-//go:embed templates/*
-var templateFiles embed.FS
 
 const (
 	embeddedFilesRoot = "dist"
@@ -26,13 +22,4 @@ func MapAssetHandlers(router *http.ServeMux) {
 	}
 
 	router.Handle(path, http.StripPrefix(path, http.FileServer(http.FS(assetFiles))))
-}
-
-type HtmlTemplates struct {
-	TodoPage *template.Template
-}
-
-func ParseTemplates() *HtmlTemplates {
-	todoPage := template.Must(template.ParseFS(templateFiles, "templates/todo_page.html"))
-	return &HtmlTemplates{todoPage}
 }

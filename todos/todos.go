@@ -2,16 +2,17 @@ package todos
 
 import (
 	"database/sql"
-	"html/template"
 	"net/http"
 
 	"github.com/skaisanlahti/try-go-htmx/middleware"
 	"github.com/skaisanlahti/try-go-htmx/todos/htmx"
 	"github.com/skaisanlahti/try-go-htmx/todos/psql"
+	"github.com/skaisanlahti/try-go-htmx/todos/templates"
 )
 
-func MapHtmxHandlers(router *http.ServeMux, database *sql.DB, todoPage *template.Template) {
+func MapHtmxHandlers(router *http.ServeMux, database *sql.DB) {
 	repository := psql.NewTodoRepository(database)
+	todoPage := templates.ParseTemplates().TodoPage
 	removeTodo := htmx.NewRemoveTodoHandler(repository)
 	toggleTodo := htmx.NewToggleTodoHandler(repository, htmx.NewHtmxToggleTodoView(todoPage))
 	addTodo := htmx.NewAddTodoHandler(repository, htmx.NewHtmxAddTodoView(todoPage))
