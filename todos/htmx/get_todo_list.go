@@ -30,6 +30,7 @@ func (handler *GetTodoListHandler) ServeHTTP(response http.ResponseWriter, reque
 	todos := handler.repository.GetTodos()
 	html := handler.view.RenderTodoList(todos)
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
+	response.WriteHeader(http.StatusOK)
 	response.Write(html)
 }
 

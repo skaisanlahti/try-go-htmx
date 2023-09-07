@@ -33,6 +33,7 @@ func (handler *AddTodoHandler) ServeHTTP(response http.ResponseWriter, request *
 	if err != nil {
 		html := handler.view.RenderTodoForm(task, err.Error())
 		response.Header().Add("Content-type", "text/html; charset=utf-8")
+		response.WriteHeader(http.StatusOK)
 		response.Write(html)
 		return
 	}
@@ -45,6 +46,7 @@ func (handler *AddTodoHandler) ServeHTTP(response http.ResponseWriter, request *
 	html := handler.view.RenderTodoForm("", "")
 	response.Header().Add("HX-Trigger", "GetTodoList")
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
+	response.WriteHeader(http.StatusOK)
 	response.Write(html)
 }
 
