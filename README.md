@@ -76,7 +76,7 @@ go run .
 
 ## Using HTMX in html
 
-Example in `todos/templates/todo_page.html`
+Example in [todos/templates/todo_page.html](https://github.com/skaisanlahti/try-go-htmx/blob/dev/todos/templates/todo_page.html)
 
 - Split a page into partials using "block" calls which combine "define" and "template" to define a render are in-place
 - Embedded HTMX properties in html elements let us make backend calls without JS
@@ -84,6 +84,10 @@ Example in `todos/templates/todo_page.html`
 
 ## Using HX headers to trigger requests
 
-Example in `todos/htmx/add_todo.go`
+Example in [todos/htmx/add_todo.go](https://github.com/skaisanlahti/try-go-htmx/blob/52e40d35a723b6ddf5018fea5312ce82f0d3f785/todos/htmx/add_todo.go#L47)
 
 - Trigger additional HTMX requests using headers `response.Header().Add("HX-Trigger", "GetTodoList")`
+
+## Feature focused code organization
+
+Vertical slices and feature folders are cool. It's a bit difficult to find the balance between code reuse and feature isolation. In this project I decided to keep each http handler as it's own feature in the htmx folder, but separate repository on it's own, because at least 4 handlers reuse the same database operations. Domain types and functions are also split into their own folder because at least the type is shared by all handlers.
