@@ -24,7 +24,7 @@ func main() {
 		Addr:         variables.Address,
 		Handler:      router,
 		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 3 * time.Second,
+		WriteTimeout: 5 * time.Second,
 	}
 
 	log.Printf("Starting a server at %s", variables.Address)
