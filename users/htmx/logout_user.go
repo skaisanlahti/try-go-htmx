@@ -2,12 +2,10 @@ package htmx
 
 import (
 	"net/http"
-
-	"github.com/skaisanlahti/try-go-htmx/users/domain"
 )
 
 type LogoutSessionStore interface {
-	Remove(sessionId string)
+	Remove(request *http.Request) (*http.Cookie, error)
 }
 
 type LogoutUserHandler struct {
@@ -21,15 +19,13 @@ func NewLogoutUserHandler(
 }
 
 func (handler *LogoutUserHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
-	cookie, err := request.Cookie("sid")
+	cookie, err := handler.sessions.Remove(request)
 	if err != nil {
 		response.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	sessionId := cookie.Value
-	handler.sessions.Remove(sessionId)
-	http.SetCookie(response, domain.NewExpiredSessionCookie())
+	http.SetCookie(response, cookie)
 	response.Header().Add("HX-Redirect", "/logout")
 	response.WriteHeader(http.StatusOK)
 }

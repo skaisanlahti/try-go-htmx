@@ -19,75 +19,70 @@ type AddUserRenderer interface {
 	RenderAddUserForm(name string, password string, errorMessage string) []byte
 }
 
-type AddUserSessionStore interface {
-	Add(userId int) *domain.Session
+type AddUserSessionManager interface {
+	Add(userId int) (*http.Cookie, error)
 }
 
 type AddUserHandler struct {
 	repository AddUserRepository
-	sessions   AddUserSessionStore
+	sessions   AddUserSessionManager
 	renderer   AddUserRenderer
-	mode       string
 }
 
 func NewAddUserHandler(
 	repository AddUserRepository,
-	sessions AddUserSessionStore,
+	sessions AddUserSessionManager,
 	renderer AddUserRenderer,
-	mode string,
 ) *AddUserHandler {
-	return &AddUserHandler{repository, sessions, renderer, mode}
+	return &AddUserHandler{repository, sessions, renderer}
 }
 
 func (handler *AddUserHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 	name := request.FormValue("name")
 	password := request.FormValue("password")
-	if name == "" {
-		html := handler.renderer.RenderAddUserForm(name, password, "User name is required.")
+	renderError := func(message string) {
+		html := handler.renderer.RenderAddUserForm(name, password, message)
 		response.Header().Add("Content-type", "text/html; charset=utf-8")
 		response.WriteHeader(http.StatusOK)
 		response.Write(html)
+		return
+	}
+
+	if name == "" {
+		renderError("User name is required.")
 		return
 	}
 
 	if password == "" {
-		html := handler.renderer.RenderAddUserForm(name, password, "Password is required.")
-		response.Header().Add("Content-type", "text/html; charset=utf-8")
-		response.WriteHeader(http.StatusOK)
-		response.Write(html)
-		return
+		renderError("Password is required.")
 	}
 
 	user, err := handler.repository.GetUserByName(name)
 	if err == nil {
-		html := handler.renderer.RenderAddUserForm(name, password, "User name already exists.")
-		response.Header().Add("Content-type", "text/html; charset=utf-8")
-		response.WriteHeader(http.StatusOK)
-		response.Write(html)
+		renderError("User name already exists.")
 		return
 	}
 
 	user, err = domain.NewUser(name, password)
 	if err != nil {
-		html := handler.renderer.RenderAddUserForm(name, password, err.Error())
-		response.Header().Add("Content-type", "text/html; charset=utf-8")
-		response.WriteHeader(http.StatusOK)
-		response.Write(html)
+		renderError(err.Error())
 		return
 	}
 
 	err = handler.repository.AddUser(user)
 	if err != nil {
-		html := handler.renderer.RenderAddUserForm(name, password, err.Error())
-		response.Header().Add("Content-type", "text/html; charset=utf-8")
-		response.WriteHeader(http.StatusOK)
-		response.Write(html)
+		renderError(err.Error())
 		return
 	}
 
-	addedUser, err := handler.repository.GetUserByName(user.Name)
-	session := handler.sessions.Add(addedUser.Id)
-	http.SetCookie(response, domain.NewSessionCookie(session, handler.mode))
+	addedUser, _ := handler.repository.GetUserByName(user.Name)
+	cookie, err := handler.sessions.Add(addedUser.Id)
+	if err != nil {
+		renderError(err.Error())
+		return
+	}
+
+	http.SetCookie(response, cookie)
 	response.Header().Add("HX-Redirect", "/todos")
 	response.WriteHeader(http.StatusOK)
 }

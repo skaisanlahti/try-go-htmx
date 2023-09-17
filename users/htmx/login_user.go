@@ -15,7 +15,7 @@ type LoginUserRepository interface {
 }
 
 type LoginUserSessionStore interface {
-	Add(userId int) *domain.Session
+	Add(userId int) (*http.Cookie, error)
 }
 
 type LoginUserRenderer interface {
@@ -26,43 +26,45 @@ type LoginUserHandler struct {
 	repository LoginUserRepository
 	sessions   LoginUserSessionStore
 	renderer   LoginUserRenderer
-	mode       string
 }
 
 func NewLoginUserHandler(
 	repository LoginUserRepository,
 	sessions LoginUserSessionStore,
 	renderer LoginUserRenderer,
-	mode string,
 ) *LoginUserHandler {
-	return &LoginUserHandler{repository, sessions, renderer, mode}
+	return &LoginUserHandler{repository, sessions, renderer}
 }
 
 func (handler *LoginUserHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 	name := request.FormValue("name")
 	password := request.FormValue("password")
-	log.Printf("Name: %s Password: %s", name, password)
-
-	user, err := handler.repository.GetUserByName(name)
-	if err != nil {
-		html := handler.renderer.RenderLoginForm(name, password, "Invalid credentials.")
+	renderError := func(message string) {
+		html := handler.renderer.RenderLoginForm(name, password, message)
 		response.Header().Add("Content-type", "text/html; charset=utf-8")
 		response.WriteHeader(http.StatusOK)
 		response.Write(html)
+	}
+
+	user, err := handler.repository.GetUserByName(name)
+	if err != nil {
+		renderError("Invalid credentials.")
 		return
 	}
 
 	isPasswordValid := domain.IsPasswordValid(user.Password, []byte(password))
 	if err != nil || !isPasswordValid {
-		html := handler.renderer.RenderLoginForm(name, password, "Invalid credentials.")
-		response.Header().Add("Content-type", "text/html; charset=utf-8")
-		response.WriteHeader(http.StatusOK)
-		response.Write(html)
+		renderError("Invalid credentials.")
 		return
 	}
 
-	session := handler.sessions.Add(user.Id)
-	http.SetCookie(response, domain.NewSessionCookie(session, handler.mode))
+	cookie, err := handler.sessions.Add(user.Id)
+	if err != nil {
+		renderError(err.Error())
+		return
+	}
+
+	http.SetCookie(response, cookie)
 	response.Header().Add("HX-Redirect", "/todos")
 	response.WriteHeader(http.StatusOK)
 }

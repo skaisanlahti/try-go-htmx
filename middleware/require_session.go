@@ -3,23 +3,21 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/skaisanlahti/try-go-htmx/users/domain"
+	"github.com/skaisanlahti/try-go-htmx/sessions"
 )
 
 type SessionStore interface {
-	Remove(sessionId string)
-	Validate(sessionId string) (*domain.Session, bool)
-	Extend(*domain.Session) *domain.Session
+	Validate(request *http.Request) (*sessions.Session, error)
+	Extend(*sessions.Session) (*http.Cookie, error)
 }
 
 type RequireSessionMiddleware struct {
 	next     http.Handler
 	sessions SessionStore
-	mode     string
 }
 
-func RequireSession(handler http.Handler, sessions SessionStore, mode string) *RequireSessionMiddleware {
-	return &RequireSessionMiddleware{handler, sessions, mode}
+func RequireSession(handler http.Handler, sessions SessionStore) *RequireSessionMiddleware {
+	return &RequireSessionMiddleware{handler, sessions}
 }
 
 func (middleware *RequireSessionMiddleware) ServeHTTP(response http.ResponseWriter, request *http.Request) {
@@ -36,20 +34,18 @@ func (middleware *RequireSessionMiddleware) ServeHTTP(response http.ResponseWrit
 		return
 	}
 
-	sessionCookie, err := request.Cookie(domain.SessionCookieName)
+	session, err := middleware.sessions.Validate(request)
 	if err != nil {
 		redirectToLogin()
 		return
 	}
 
-	sessionId := sessionCookie.Value
-	session, ok := middleware.sessions.Validate(sessionId)
-	if !ok {
+	newSessionCookie, err := middleware.sessions.Extend(session)
+	if err != nil {
 		redirectToLogin()
 		return
 	}
 
-	session = middleware.sessions.Extend(session)
-	http.SetCookie(response, domain.NewSessionCookie(session, middleware.mode))
+	http.SetCookie(response, newSessionCookie)
 	middleware.next.ServeHTTP(response, request)
 }

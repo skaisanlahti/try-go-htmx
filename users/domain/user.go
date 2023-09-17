@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"errors"
 	"log"
 
 	"golang.org/x/crypto/bcrypt"
@@ -12,10 +13,24 @@ type User struct {
 	Password []byte // hash
 }
 
+var (
+	ErrUserNameTooLong    error = errors.New("User name is too long.")
+	ErrPasswordTooLong    error = errors.New("Password is too long.")
+	ErrPasswordHashFailed error = errors.New("Failed to hash password.")
+)
+
 func NewUser(name string, password string) (User, error) {
+	if len([]rune(name)) > 100 {
+		return User{}, ErrUserNameTooLong
+	}
+
+	if len(password) > 72 {
+		return User{}, ErrPasswordTooLong
+	}
+
 	passwordHash, err := HashPassword(password)
 	if err != nil {
-		return User{}, err
+		return User{}, ErrPasswordHashFailed
 	}
 
 	return User{Name: name, Password: passwordHash}, nil

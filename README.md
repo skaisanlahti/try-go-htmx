@@ -30,6 +30,7 @@ docker-compose up -d
 cd migrations
 cat "0_create_migrations.up.sql" | docker exec -i try-go-htmx-db psql -U dbuser -d try-go-htmx-db
 cat "1_create_todos.up.sql" | docker exec -i try-go-htmx-db psql -U dbuser -d try-go-htmx-db
+cat "2_create_users.up.sql" | docker exec -i try-go-htmx-db psql -U dbuser -d try-go-htmx-db
 cd ..
 
 # build frontend assets

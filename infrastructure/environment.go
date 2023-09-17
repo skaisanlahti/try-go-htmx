@@ -12,6 +12,14 @@ const (
 	ModeProduction  string = "Production"
 )
 
+func IsDevelopment(mode string) bool {
+	return mode == ModeDevelopment
+}
+
+func IsProduction(mode string) bool {
+	return mode == ModeProduction
+}
+
 type Environment struct {
 	Mode     string
 	Address  string
