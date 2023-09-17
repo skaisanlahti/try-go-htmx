@@ -28,14 +28,6 @@ type SessionRepository interface {
 	Remove(sessionId string) error
 }
 
-type Store struct {
-	cookieName      string
-	sessionSecret   string
-	sessionDuration time.Duration
-	sessions        SessionRepository
-	secure          bool
-}
-
 type StoreOptions struct {
 	CookieName        string
 	SessionSecret     string
@@ -44,8 +36,16 @@ type StoreOptions struct {
 	Secure            bool
 }
 
+type Store struct {
+	cookieName      string
+	sessionSecret   string
+	sessionDuration time.Duration
+	sessions        SessionRepository
+	secure          bool
+}
+
 func NewStore(options StoreOptions) *Store {
-	manager := &Store{
+	store := &Store{
 		cookieName:      options.CookieName,
 		sessionSecret:   options.SessionSecret,
 		sessionDuration: options.SessionDuration,
@@ -53,7 +53,7 @@ func NewStore(options StoreOptions) *Store {
 		secure:          options.Secure,
 	}
 
-	return manager
+	return store
 }
 
 func (store *Store) Add(userId int) (*http.Cookie, error) {

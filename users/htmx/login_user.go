@@ -26,6 +26,7 @@ type LoginUserHandler struct {
 	repository LoginUserRepository
 	sessions   LoginUserSessionStore
 	renderer   LoginUserRenderer
+	fakeUser   domain.User
 }
 
 func NewLoginUserHandler(
@@ -33,7 +34,12 @@ func NewLoginUserHandler(
 	sessions LoginUserSessionStore,
 	renderer LoginUserRenderer,
 ) *LoginUserHandler {
-	return &LoginUserHandler{repository, sessions, renderer}
+	fakeUser, err := domain.NewUser("FakeName", "Fake Passphrase to compare")
+	if err != nil {
+		log.Panicln("Failed to create fake user for login.")
+	}
+
+	return &LoginUserHandler{repository, sessions, renderer, fakeUser}
 }
 
 func (handler *LoginUserHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
@@ -46,21 +52,22 @@ func (handler *LoginUserHandler) ServeHTTP(response http.ResponseWriter, request
 		response.Write(html)
 	}
 
+	isPasswordValid := false
 	user, err := handler.repository.GetUserByName(name)
 	if err != nil {
-		renderError("Invalid credentials.")
-		return
+		domain.IsPasswordValid(handler.fakeUser.Password, []byte(password))
+	} else {
+		isPasswordValid = domain.IsPasswordValid(user.Password, []byte(password))
 	}
 
-	isPasswordValid := domain.IsPasswordValid(user.Password, []byte(password))
-	if err != nil || !isPasswordValid {
+	if !isPasswordValid {
 		renderError("Invalid credentials.")
 		return
 	}
 
 	cookie, err := handler.sessions.Add(user.Id)
 	if err != nil {
-		renderError(err.Error())
+		renderError("Internal session error.")
 		return
 	}
 

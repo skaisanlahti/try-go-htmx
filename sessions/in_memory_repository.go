@@ -60,8 +60,8 @@ func (repository *InMemoryRepository) Remove(sessionId string) error {
 }
 
 const (
-	checkingInterval time.Duration = 60 * time.Second // seconds
-	timeFormat       string        = "2006-01-02 15:04:05 MST"
+	checkingInterval time.Duration = 60 * time.Second
+	timeFormat       string        = "2006/01/02 15:04:05 -0700"
 )
 
 func removeExpired(repository *InMemoryRepository) {

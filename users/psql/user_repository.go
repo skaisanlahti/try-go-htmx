@@ -45,7 +45,10 @@ func (repository *UserRepository) GetUserByName(name string) (domain.User, error
 	var user domain.User
 	row := repository.Database.QueryRow(selectUserByName, name)
 	if err := row.Scan(&user.Id, &user.Name, &user.Password); err != nil {
-		log.Println(err.Error())
+		if err != sql.ErrNoRows {
+			log.Println(err.Error())
+		}
+
 		return user, err
 	}
 

@@ -24,11 +24,11 @@ func LogRequest(handler http.Handler) *LogRequestMiddleware {
 	return &LogRequestMiddleware{next: handler}
 }
 
-func (handler *LogRequestMiddleware) ServeHTTP(response http.ResponseWriter, request *http.Request) {
+func (middleware *LogRequestMiddleware) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 	before := time.Now().UnixMilli()
 	responseProxy := &responseProxy{ResponseWriter: response}
 
-	handler.next.ServeHTTP(responseProxy, request)
+	middleware.next.ServeHTTP(responseProxy, request)
 
 	after := time.Now().UnixMilli()
 	duration := after - before
