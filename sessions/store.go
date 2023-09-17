@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"errors"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -170,23 +169,13 @@ func (store *Store) newExpiredSessionCookie() *http.Cookie {
 
 func (store *Store) encodeSession(sessionId string) (string, error) {
 	code := hmac.New(sha256.New, []byte(store.sessionSecret))
-	_, err := code.Write([]byte(store.cookieName))
-	if err != nil {
-		log.Println(err.Error())
-		return "", err
-	}
-
-	_, err = code.Write([]byte(sessionId))
-	if err != nil {
-		log.Println(err.Error())
-		return "", err
-	}
-
+	code.Write([]byte(store.cookieName))
+	code.Write([]byte(sessionId))
 	signature := code.Sum(nil)
 	signedSession := sessionId + "." + string(signature)
 	encodedSession := base64.URLEncoding.EncodeToString([]byte(signedSession))
 	if len(encodedSession) > 4096 {
-		return "", errors.New("SignSessionId: Cookie value too long.")
+		return "", errors.New("Cookie value too long.")
 	}
 
 	return encodedSession, nil
@@ -198,18 +187,13 @@ func (store *Store) decodeSession(encodedSession string) (string, error) {
 		return "", err
 	}
 
-	if len(signedSession) < sha256.Size {
-		return "", errors.New("Invalid session cookie value.")
-	}
-
 	split := strings.SplitN(string(signedSession), ".", 2)
 	sessionId := split[0]
 	signature := split[1]
-	mac := hmac.New(sha256.New, []byte(store.sessionSecret))
-	mac.Write([]byte(store.cookieName))
-	mac.Write([]byte(sessionId))
-	expectedSignature := mac.Sum(nil)
-
+	code := hmac.New(sha256.New, []byte(store.sessionSecret))
+	code.Write([]byte(store.cookieName))
+	code.Write([]byte(sessionId))
+	expectedSignature := code.Sum(nil)
 	if !hmac.Equal([]byte(signature), expectedSignature) {
 		return "", errors.New("Invalid signature.")
 	}
