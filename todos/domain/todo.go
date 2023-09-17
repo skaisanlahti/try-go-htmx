@@ -13,7 +13,7 @@ func NewTodo(task string) (Todo, error) {
 		return Todo{}, errors.New("Task too short.")
 	}
 
-	if len(task) > 100 {
+	if len([]rune(task)) > 100 {
 		return Todo{}, errors.New("Task too long.")
 	}
 

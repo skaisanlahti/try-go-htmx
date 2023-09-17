@@ -13,6 +13,9 @@
   </head>
   <body>
     <main id="page" class="container">
+      <div class="logout">
+        <a href="#" hx-delete="/users/logout">Logout</a>
+      </div>
       <h1>Todo list</h1>
       <!-- .Key as name attribute required to stop firefox from preserving values through page refresh -->
       {{ block "form" . }}

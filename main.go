@@ -9,6 +9,8 @@ import (
 	"github.com/skaisanlahti/try-go-htmx/assets"
 	"github.com/skaisanlahti/try-go-htmx/infrastructure"
 	"github.com/skaisanlahti/try-go-htmx/todos"
+	"github.com/skaisanlahti/try-go-htmx/users"
+	"github.com/skaisanlahti/try-go-htmx/users/memory"
 )
 
 func main() {
@@ -16,9 +18,11 @@ func main() {
 	database := infrastructure.OpenDatabase(variables.Database)
 	defer database.Close()
 
+	sessions := memory.NewSessionStore()
 	router := http.NewServeMux()
 	assets.MapAssetHandlers(router)
-	todos.MapHtmxHandlers(router, database)
+	users.MapHtmxHandlers(router, database, sessions, variables.Mode)
+	todos.MapHtmxHandlers(router, database, sessions, variables.Mode)
 
 	server := http.Server{
 		Addr:         variables.Address,

@@ -7,7 +7,13 @@ import (
 	"strings"
 )
 
+const (
+	ModeDevelopment string = "Development"
+	ModeProduction  string = "Production"
+)
+
 type Environment struct {
+	Mode     string
 	Address  string
 	Database string
 }
@@ -33,6 +39,11 @@ func ReadEnvironment(filename string) Environment {
 		envMap[key] = value
 	}
 
+	mode, exists := envMap["MODE"]
+	if !exists {
+		log.Fatal("MODE not found in env file.")
+	}
+
 	address, exists := envMap["ADDRESS"]
 	if !exists {
 		log.Fatal("ADDRESS not found in env file.")
@@ -44,6 +55,7 @@ func ReadEnvironment(filename string) Environment {
 	}
 
 	return Environment{
+		Mode:     mode,
 		Address:  address,
 		Database: database,
 	}

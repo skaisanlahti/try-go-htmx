@@ -6,27 +6,27 @@ import (
 	"time"
 )
 
-type statusWriter struct {
+type responseProxy struct {
 	http.ResponseWriter
 	statusCode int
 }
 
-func (proxy *statusWriter) WriteHeader(code int) {
+func (proxy *responseProxy) WriteHeader(code int) {
 	proxy.statusCode = code
 	proxy.ResponseWriter.WriteHeader(code)
 }
 
-type Logger struct {
+type LogRequestMiddleware struct {
 	next http.Handler
 }
 
-func Log(handler http.Handler) *Logger {
-	return &Logger{next: handler}
+func LogRequest(handler http.Handler) *LogRequestMiddleware {
+	return &LogRequestMiddleware{next: handler}
 }
 
-func (handler *Logger) ServeHTTP(response http.ResponseWriter, request *http.Request) {
+func (handler *LogRequestMiddleware) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 	before := time.Now().UnixMilli()
-	responseProxy := &statusWriter{ResponseWriter: response}
+	responseProxy := &responseProxy{ResponseWriter: response}
 
 	handler.next.ServeHTTP(responseProxy, request)
 
