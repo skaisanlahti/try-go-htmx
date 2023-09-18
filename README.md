@@ -2,13 +2,15 @@
 
 HTMX is having a bit of a renaissance right now, so I wanted to give it a try and play around with Go and PostgreSQL at the same time. This repository covers a few ideas:
 
-- Creating an interactive frontend experience with HTMX
+- Using HTMX to create a frontend
 - Using Go standard library to:
   - Run a web server
   - Use html templates
   - Write PostgreSQL queries
 - Writing PostgreSQL migrations manually
 - Building Typescript and SASS assets with Parcel
+- Encoding passwords with Bcrypt and Argon2id
+- Managing user sessions in a way that is compatible with HTMX
 
 ### Technology
 
@@ -85,7 +87,7 @@ Example in [todos/templates/todo_page.html](https://github.com/skaisanlahti/try-
 
 ## Using HX headers to trigger requests
 
-Example in [todos/htmx/add_todo.go](https://github.com/skaisanlahti/try-go-htmx/blob/52e40d35a723b6ddf5018fea5312ce82f0d3f785/todos/htmx/add_todo.go#L47)
+Example in [todos/handlers/add_todo.go](https://github.com/skaisanlahti/try-go-htmx/blob/6de383d17423c15507fcac301403606dcbc441a7/todos/handlers/add_todo.go#L47)
 
 - Trigger additional HTMX requests using headers `response.Header().Add("HX-Trigger", "GetTodoList")`
 
