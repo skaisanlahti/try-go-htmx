@@ -36,8 +36,8 @@ type Argon2Encoder struct {
 }
 
 func NewArgon2Encoder(options Argon2idOptions) *Argon2Encoder {
-	hasher := &Argon2Encoder{options}
-	return hasher
+	encoder := &Argon2Encoder{options}
+	return encoder
 }
 
 func (encoder *Argon2Encoder) NewKey(password string) ([]byte, error) {
@@ -46,11 +46,11 @@ func (encoder *Argon2Encoder) NewKey(password string) ([]byte, error) {
 	key := argon2.IDKey([]byte(password), salt, encoder.options.Time, encoder.options.Memory, encoder.options.Threads, encoder.options.KeyLength)
 	duration := time.Now().Sub(start).Milliseconds()
 	if duration < 100 {
-		log.Printf("Password hashing took less than 100 ms (%d ms). Consider increasing hashing difficult.", duration)
+		log.Printf("Password encoding took less than 100 ms (%d ms). Consider increasing encoding difficult.", duration)
 	}
 
 	if duration > 500 {
-		log.Printf("Password hashing took more than 500 ms (%d ms). Consider decreasing hashing difficult.", duration)
+		log.Printf("Password encoding took more than 500 ms (%d ms). Consider decreasing encoding difficult.", duration)
 	}
 
 	encodedKey := encodeKey(salt, key, encoder.options)
@@ -67,11 +67,11 @@ func (encoder *Argon2Encoder) VerifyKey(encodedKey []byte, candidatePassword str
 	candidateKey := argon2.IDKey([]byte(candidatePassword), salt, options.Time, options.Memory, options.Threads, options.KeyLength)
 	duration := time.Now().Sub(start).Milliseconds()
 	if duration < 100 {
-		log.Printf("Password hashing took less than 100 ms (%d ms). Consider increasing hashing difficult.", duration)
+		log.Printf("Password encoding took less than 100 ms (%d ms). Consider increasing encoding difficult.", duration)
 	}
 
 	if duration > 500 {
-		log.Printf("Password hashing took more than 500 ms (%d ms). Consider decreasing hashing difficult.", duration)
+		log.Printf("Password encoding took more than 500 ms (%d ms). Consider decreasing encoding difficult.", duration)
 	}
 
 	result := subtle.ConstantTimeCompare(key, candidateKey)

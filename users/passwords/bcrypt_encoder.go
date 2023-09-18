@@ -20,16 +20,16 @@ func (encoder *BcryptEncoder) NewKey(password string) ([]byte, error) {
 		return nil, errors.New("Password is too long.")
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), encoder.Cost)
+	key, err := bcrypt.GenerateFromPassword([]byte(password), encoder.Cost)
 	if err != nil {
 		log.Println(err.Error())
 		return []byte{}, err
 	}
 
-	return hash, nil
+	return key, nil
 }
 
-func (hasher *BcryptEncoder) VerifyKey(hashedPassword []byte, candidatePassword string) (bool, error) {
-	err := bcrypt.CompareHashAndPassword(hashedPassword, []byte(candidatePassword))
+func (encoder *BcryptEncoder) VerifyKey(key []byte, candidatePassword string) (bool, error) {
+	err := bcrypt.CompareHashAndPassword(key, []byte(candidatePassword))
 	return err == nil, err
 }

@@ -43,7 +43,7 @@ func NewLoginUserHandler(
 ) *LoginUserHandler {
 	fakeKey, err := encoder.NewKey("Fake Passphrase to compare")
 	if err != nil {
-		log.Panicln("Failed to create fake hash for login.")
+		log.Panicln("Failed to create fake key for login.")
 	}
 
 	fakeUser, err := domain.NewUser("FakeName", fakeKey)
