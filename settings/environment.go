@@ -32,7 +32,7 @@ func ReadEnvironment(filename string) Environment {
 		log.Fatal(err)
 	}
 
-	envMap := make(map[string]string)
+	variables := make(map[string]string)
 	lines := strings.Split(string(content), "\n")
 
 	for _, line := range lines {
@@ -43,20 +43,21 @@ func ReadEnvironment(filename string) Environment {
 
 		key := strings.TrimSpace(parts[0])
 		value := strings.TrimSpace(parts[1])
-		envMap[key] = value
+		variables[key] = value
 	}
 
-	mode, exists := envMap["MODE"]
+	mode, exists := variables["MODE"]
 	if !exists {
-		log.Fatal("MODE not found in env file.")
+		log.Println("MODE not found in env file. Using Development.")
+		mode = ModeDevelopment
 	}
 
-	address, exists := envMap["ADDRESS"]
+	address, exists := variables["ADDRESS"]
 	if !exists {
 		log.Fatal("ADDRESS not found in env file.")
 	}
 
-	database, exists := envMap["DATABASE"]
+	database, exists := variables["DATABASE"]
 	if !exists {
 		log.Fatal("DATABASE not found in env file.")
 	}
