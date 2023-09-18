@@ -12,7 +12,7 @@ import (
 
 type LoginUserPasswordEncoder interface {
 	NewKey(password string) ([]byte, error)
-	VerifyKey(encodedKey []byte, candidatePassword string, recalculateOutdatedKeys bool) (bool, []byte, error)
+	VerifyKey(encodedKey []byte, candidatePassword string, recalculateOutdatedKeys bool) (bool, chan []byte, error)
 }
 
 type LoginUserRepository interface {
@@ -37,8 +37,8 @@ type LoginUserHandler struct {
 	repository LoginUserRepository
 	sessions   LoginUserSessionStore
 	renderer   LoginUserRenderer
-	fakeUser   domain.User
 	options    LoginUserOptions
+	fakeUser   domain.User
 }
 
 func NewLoginUserHandler(
@@ -58,7 +58,7 @@ func NewLoginUserHandler(
 		log.Panicln("Failed to create fake user for login.")
 	}
 
-	return &LoginUserHandler{encoder, repository, sessions, renderer, fakeUser, options}
+	return &LoginUserHandler{encoder, repository, sessions, renderer, options, fakeUser}
 }
 
 func (handler *LoginUserHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
@@ -78,15 +78,14 @@ func (handler *LoginUserHandler) ServeHTTP(response http.ResponseWriter, request
 		return
 	}
 
-	isPasswordCorrect, newKey, _ := handler.encoder.VerifyKey(user.Password, password, handler.options.RecalculateOutdatedKeys)
-	if newKey != nil {
-		user.Password = newKey
-		go handler.repository.UpdateUserPassword(user)
-	}
-
+	isPasswordCorrect, newKeyChannel, _ := handler.encoder.VerifyKey(user.Password, password, handler.options.RecalculateOutdatedKeys)
 	if !isPasswordCorrect {
 		renderError("Invalid credentials.")
 		return
+	}
+
+	if newKeyChannel != nil {
+		go handler.updatePassword(user, newKeyChannel)
 	}
 
 	cookie, err := handler.sessions.Add(user.Id)
@@ -98,6 +97,16 @@ func (handler *LoginUserHandler) ServeHTTP(response http.ResponseWriter, request
 	http.SetCookie(response, cookie)
 	response.Header().Add("HX-Redirect", "/todos")
 	response.WriteHeader(http.StatusOK)
+}
+
+func (handler *LoginUserHandler) updatePassword(user domain.User, newKeyChannel chan []byte) {
+	user.Password = <-newKeyChannel
+	err := handler.repository.UpdateUserPassword(user)
+	if err != nil {
+		log.Printf("[ERROR] User: %s | Key update failed: %s", user.Name, err.Error())
+	} else {
+		log.Printf("[INFO] User: %s | Key update succeeded.", user.Name)
+	}
 }
 
 type HtmxLoginUserRenderer struct {

@@ -57,7 +57,7 @@ func (encoder *Argon2Encoder) NewKey(password string) ([]byte, error) {
 	return encodedKey, nil
 }
 
-func (encoder *Argon2Encoder) VerifyKey(encodedKey []byte, candidatePassword string, recalculateOutdatedKeys bool) (bool, []byte, error) {
+func (encoder *Argon2Encoder) VerifyKey(encodedKey []byte, candidatePassword string, recalculateOutdatedKeys bool) (bool, chan []byte, error) {
 	salt, key, options, err := decodeKey(encodedKey)
 	if err != nil {
 		return false, nil, err
@@ -76,16 +76,19 @@ func (encoder *Argon2Encoder) VerifyKey(encodedKey []byte, candidatePassword str
 
 	result := subtle.ConstantTimeCompare(key, candidateKey)
 	isPasswordCorrect := result == 1
-
-	var newKey []byte
-	if recalculateOutdatedKeys {
-		areOptionsCorrect := encoder.verifyOptions(options)
-		if !areOptionsCorrect {
-			newKey, _ = encoder.NewKey(candidatePassword)
-		}
+	var newKeyChannel chan []byte
+	if isPasswordCorrect && recalculateOutdatedKeys && !encoder.verifyOptions(options) {
+		newKeyChannel = make(chan []byte)
+		go encoder.recalculateKey(candidatePassword, newKeyChannel)
 	}
 
-	return isPasswordCorrect, newKey, nil
+	return isPasswordCorrect, newKeyChannel, nil
+}
+
+func (encoder *Argon2Encoder) recalculateKey(password string, newKeyChannel chan []byte) {
+	defer close(newKeyChannel)
+	newKey, _ := encoder.NewKey(password)
+	newKeyChannel <- newKey
 }
 
 func newSalt(size uint32) []byte {
