@@ -1,4 +1,4 @@
-package htmx
+package handlers
 
 import (
 	"bytes"
@@ -9,6 +9,11 @@ import (
 
 	"github.com/skaisanlahti/try-go-htmx/users/domain"
 )
+
+type LoginUserPasswordEncoder interface {
+	NewKey(password string) ([]byte, error)
+	VerifyKey(encodedKey []byte, candidatePassword string) (bool, error)
+}
 
 type LoginUserRepository interface {
 	GetUserByName(name string) (domain.User, error)
@@ -23,6 +28,7 @@ type LoginUserRenderer interface {
 }
 
 type LoginUserHandler struct {
+	encoder    LoginUserPasswordEncoder
 	repository LoginUserRepository
 	sessions   LoginUserSessionStore
 	renderer   LoginUserRenderer
@@ -30,16 +36,22 @@ type LoginUserHandler struct {
 }
 
 func NewLoginUserHandler(
+	encoder LoginUserPasswordEncoder,
 	repository LoginUserRepository,
 	sessions LoginUserSessionStore,
 	renderer LoginUserRenderer,
 ) *LoginUserHandler {
-	fakeUser, err := domain.NewUser("FakeName", "Fake Passphrase to compare")
+	fakeKey, err := encoder.NewKey("Fake Passphrase to compare")
+	if err != nil {
+		log.Panicln("Failed to create fake hash for login.")
+	}
+
+	fakeUser, err := domain.NewUser("FakeName", fakeKey)
 	if err != nil {
 		log.Panicln("Failed to create fake user for login.")
 	}
 
-	return &LoginUserHandler{repository, sessions, renderer, fakeUser}
+	return &LoginUserHandler{encoder, repository, sessions, renderer, fakeUser}
 }
 
 func (handler *LoginUserHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
@@ -55,9 +67,9 @@ func (handler *LoginUserHandler) ServeHTTP(response http.ResponseWriter, request
 	isPasswordValid := false
 	user, err := handler.repository.GetUserByName(name)
 	if err != nil {
-		domain.IsPasswordValid(handler.fakeUser.Password, []byte(password))
+		handler.encoder.VerifyKey(handler.fakeUser.Password, password)
 	} else {
-		isPasswordValid = domain.IsPasswordValid(user.Password, []byte(password))
+		isPasswordValid, _ = handler.encoder.VerifyKey(user.Password, password)
 	}
 
 	if !isPasswordValid {

@@ -1,4 +1,4 @@
-package htmx
+package handlers
 
 import (
 	"bytes"
@@ -10,6 +10,10 @@ import (
 	"github.com/skaisanlahti/try-go-htmx/users/domain"
 )
 
+type AddUserPasswordEncoder interface {
+	NewKey(password string) ([]byte, error)
+}
+
 type AddUserRepository interface {
 	GetUserByName(name string) (domain.User, error)
 	AddUser(user domain.User) error
@@ -19,22 +23,24 @@ type AddUserRenderer interface {
 	RenderAddUserForm(name string, password string, errorMessage string) []byte
 }
 
-type AddUserSessionManager interface {
+type AddUserSessionStore interface {
 	Add(userId int) (*http.Cookie, error)
 }
 
 type AddUserHandler struct {
+	encoder    AddUserPasswordEncoder
 	repository AddUserRepository
-	sessions   AddUserSessionManager
+	sessions   AddUserSessionStore
 	renderer   AddUserRenderer
 }
 
 func NewAddUserHandler(
+	encoder AddUserPasswordEncoder,
 	repository AddUserRepository,
-	sessions AddUserSessionManager,
+	sessions AddUserSessionStore,
 	renderer AddUserRenderer,
 ) *AddUserHandler {
-	return &AddUserHandler{repository, sessions, renderer}
+	return &AddUserHandler{encoder, repository, sessions, renderer}
 }
 
 func (handler *AddUserHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
@@ -57,26 +63,32 @@ func (handler *AddUserHandler) ServeHTTP(response http.ResponseWriter, request *
 		renderError("Password is required.")
 	}
 
-	user, err := handler.repository.GetUserByName(name)
+	newUser, err := handler.repository.GetUserByName(name)
 	if err == nil {
 		renderError("User name already exists.")
 		return
 	}
 
-	user, err = domain.NewUser(name, password)
+	key, err := handler.encoder.NewKey(password)
 	if err != nil {
 		renderError(err.Error())
 		return
 	}
 
-	err = handler.repository.AddUser(user)
+	newUser, err = domain.NewUser(name, key)
 	if err != nil {
 		renderError(err.Error())
 		return
 	}
 
-	addedUser, _ := handler.repository.GetUserByName(user.Name)
-	cookie, err := handler.sessions.Add(addedUser.Id)
+	err = handler.repository.AddUser(newUser)
+	if err != nil {
+		renderError(err.Error())
+		return
+	}
+
+	newUser, _ = handler.repository.GetUserByName(newUser.Name)
+	cookie, err := handler.sessions.Add(newUser.Id)
 	if err != nil {
 		renderError(err.Error())
 		return

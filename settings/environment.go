@@ -1,7 +1,6 @@
-package infrastructure
+package settings
 
 import (
-	"database/sql"
 	"log"
 	"os"
 	"strings"
@@ -67,13 +66,4 @@ func ReadEnvironment(filename string) Environment {
 		Address:  address,
 		Database: database,
 	}
-}
-
-func OpenDatabase(connectionString string) *sql.DB {
-	database, err := sql.Open("pgx", connectionString)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return database
 }

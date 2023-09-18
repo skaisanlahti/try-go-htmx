@@ -4,32 +4,28 @@ import (
 	"database/sql"
 	"net/http"
 
-	"github.com/skaisanlahti/try-go-htmx/middleware"
-	"github.com/skaisanlahti/try-go-htmx/sessions"
-	"github.com/skaisanlahti/try-go-htmx/todos/htmx"
-	"github.com/skaisanlahti/try-go-htmx/todos/psql"
+	"github.com/skaisanlahti/try-go-htmx/logging"
+	"github.com/skaisanlahti/try-go-htmx/todos/handlers"
+	"github.com/skaisanlahti/try-go-htmx/todos/repositories"
 	"github.com/skaisanlahti/try-go-htmx/todos/templates"
+	"github.com/skaisanlahti/try-go-htmx/users/sessions"
 )
 
-type SessionStore interface {
-	Validate(*http.Request) (*sessions.Session, error)
-	Extend(*sessions.Session) (*http.Cookie, error)
-}
-
-func MapHtmxHandlers(router *http.ServeMux, database *sql.DB, sessions SessionStore) {
-	repository := psql.NewTodoRepository(database)
+func UseTodoRoutes(router *http.ServeMux, database *sql.DB, store *sessions.Store) {
+	repository := repositories.NewPsqlTodoRepository(database)
 	todoPage := templates.ParseTemplates().TodoPage
-	removeTodo := htmx.NewRemoveTodoHandler(repository)
-	toggleTodo := htmx.NewToggleTodoHandler(repository, htmx.NewHtmxToggleTodoView(todoPage))
-	addTodo := htmx.NewAddTodoHandler(repository, htmx.NewHtmxAddTodoView(todoPage))
-	getTodoList := htmx.NewGetTodoListHandler(repository, htmx.NewHtmxGetTodoListView(todoPage))
-	getTodoPage := htmx.NewGetTodoPageHandler(repository, htmx.NewHtmxGetTodoPageView(todoPage))
 
-	router.Handle("/todos/remove", middleware.LogRequest(middleware.RequireSession(removeTodo, sessions)))
-	router.Handle("/todos/toggle", middleware.LogRequest(middleware.RequireSession(toggleTodo, sessions)))
-	router.Handle("/todos/add", middleware.LogRequest(middleware.RequireSession(addTodo, sessions)))
-	router.Handle("/todos/list", middleware.LogRequest(middleware.RequireSession(getTodoList, sessions)))
-	router.Handle("/todos", middleware.LogRequest(middleware.RequireSession(getTodoPage, sessions)))
+	getTodoPage := handlers.NewGetTodoPageHandler(repository, handlers.NewHtmxGetTodoPageView(todoPage))
+	getTodoList := handlers.NewGetTodoListHandler(repository, handlers.NewHtmxGetTodoListView(todoPage))
+	addTodo := handlers.NewAddTodoHandler(repository, handlers.NewHtmxAddTodoView(todoPage))
+	toggleTodo := handlers.NewToggleTodoHandler(repository, handlers.NewHtmxToggleTodoView(todoPage))
+	removeTodo := handlers.NewRemoveTodoHandler(repository)
+
+	router.Handle("/todos/remove", logging.LogRequest(sessions.RequireSession(removeTodo, store)))
+	router.Handle("/todos/toggle", logging.LogRequest(sessions.RequireSession(toggleTodo, store)))
+	router.Handle("/todos/add", logging.LogRequest(sessions.RequireSession(addTodo, store)))
+	router.Handle("/todos/list", logging.LogRequest(sessions.RequireSession(getTodoList, store)))
+	router.Handle("/todos", logging.LogRequest(sessions.RequireSession(getTodoPage, store)))
 	router.HandleFunc("/", func(response http.ResponseWriter, request *http.Request) {
 		http.Redirect(response, request, "/todos", http.StatusMovedPermanently)
 	})

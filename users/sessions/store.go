@@ -11,8 +11,8 @@ import (
 	"time"
 )
 
-func NewSecret() string {
-	key := make([]byte, 32)
+func NewSecret(size uint32) string {
+	key := make([]byte, size)
 	_, err := rand.Read(key)
 	if err != nil {
 		panic(err)
@@ -21,7 +21,7 @@ func NewSecret() string {
 	return base64.StdEncoding.EncodeToString(key)
 }
 
-type SessionRepository interface {
+type SessionStorage interface {
 	Find(sessionId string) (*Session, error)
 	Add(session *Session) error
 	Update(session *Session) error
@@ -29,36 +29,25 @@ type SessionRepository interface {
 }
 
 type StoreOptions struct {
-	CookieName        string
-	SessionSecret     string
-	SessionDuration   time.Duration
-	SessionRepository SessionRepository
-	Secure            bool
+	CookieName      string
+	SessionSecret   string
+	SessionDuration time.Duration
+	SessionStorage  SessionStorage
+	Secure          bool
 }
 
 type Store struct {
-	cookieName      string
-	sessionSecret   string
-	sessionDuration time.Duration
-	sessions        SessionRepository
-	secure          bool
+	StoreOptions
 }
 
 func NewStore(options StoreOptions) *Store {
-	store := &Store{
-		cookieName:      options.CookieName,
-		sessionSecret:   options.SessionSecret,
-		sessionDuration: options.SessionDuration,
-		sessions:        options.SessionRepository,
-		secure:          options.Secure,
-	}
-
+	store := &Store{options}
 	return store
 }
 
 func (store *Store) Add(userId int) (*http.Cookie, error) {
-	newSession := NewSession(userId, store.sessionDuration)
-	err := store.sessions.Add(newSession)
+	newSession := NewSession(userId, store.SessionDuration)
+	err := store.SessionStorage.Add(newSession)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +61,7 @@ func (store *Store) Add(userId int) (*http.Cookie, error) {
 }
 
 func (store *Store) Remove(request *http.Request) (*http.Cookie, error) {
-	cookie, err := request.Cookie(store.cookieName)
+	cookie, err := request.Cookie(store.CookieName)
 	if err != nil {
 		return nil, ErrMissingSessionCookie
 	}
@@ -81,7 +70,7 @@ func (store *Store) Remove(request *http.Request) (*http.Cookie, error) {
 	if err != nil {
 		return nil, ErrInvalidSessionCookie
 	}
-	err = store.sessions.Remove(sessionId)
+	err = store.SessionStorage.Remove(sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +84,7 @@ var (
 )
 
 func (store *Store) Validate(request *http.Request) (*Session, error) {
-	cookie, err := request.Cookie(store.cookieName)
+	cookie, err := request.Cookie(store.CookieName)
 	if err != nil {
 		return nil, ErrMissingSessionCookie
 	}
@@ -110,13 +99,13 @@ func (store *Store) Validate(request *http.Request) (*Session, error) {
 		return nil, err
 	}
 
-	session, err := store.sessions.Find(sessionId)
+	session, err := store.SessionStorage.Find(sessionId)
 	if err != nil {
 		return nil, ErrInvalidSessionCookie
 	}
 
 	if session.Expires.Before(time.Now()) {
-		store.sessions.Remove(session.Id)
+		store.SessionStorage.Remove(session.Id)
 		return nil, ErrInvalidSessionCookie
 	}
 
@@ -124,8 +113,8 @@ func (store *Store) Validate(request *http.Request) (*Session, error) {
 }
 
 func (store *Store) Extend(session *Session) (*http.Cookie, error) {
-	session.Expires = time.Now().Add(store.sessionDuration)
-	err := store.sessions.Update(session)
+	session.Expires = time.Now().Add(store.SessionDuration)
+	err := store.SessionStorage.Update(session)
 	if err != nil {
 		return nil, err
 	}
@@ -145,31 +134,31 @@ func (store *Store) newSessionCookie(session *Session) (*http.Cookie, error) {
 	}
 
 	return &http.Cookie{
-		Name:     store.cookieName,
+		Name:     store.CookieName,
 		Path:     "/",
 		Value:    encodedSession,
-		MaxAge:   int(store.sessionDuration.Seconds()),
+		MaxAge:   int(store.SessionDuration.Seconds()),
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
-		Secure:   store.secure,
+		Secure:   store.Secure,
 	}, nil
 }
 
 func (store *Store) newExpiredSessionCookie() *http.Cookie {
 	return &http.Cookie{
-		Name:     store.cookieName,
+		Name:     store.CookieName,
 		Path:     "/",
 		Value:    "",
 		MaxAge:   -1,
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
-		Secure:   store.secure,
+		Secure:   store.Secure,
 	}
 }
 
 func (store *Store) encodeSession(sessionId string) (string, error) {
-	code := hmac.New(sha256.New, []byte(store.sessionSecret))
-	code.Write([]byte(store.cookieName))
+	code := hmac.New(sha256.New, []byte(store.SessionSecret))
+	code.Write([]byte(store.CookieName))
 	code.Write([]byte(sessionId))
 	signature := code.Sum(nil)
 	signedSession := sessionId + "." + string(signature)
@@ -190,8 +179,8 @@ func (store *Store) decodeSession(encodedSession string) (string, error) {
 	split := strings.SplitN(string(signedSession), ".", 2)
 	sessionId := split[0]
 	signature := split[1]
-	code := hmac.New(sha256.New, []byte(store.sessionSecret))
-	code.Write([]byte(store.cookieName))
+	code := hmac.New(sha256.New, []byte(store.SessionSecret))
+	code.Write([]byte(store.CookieName))
 	code.Write([]byte(sessionId))
 	expectedSignature := code.Sum(nil)
 	if !hmac.Equal([]byte(signature), expectedSignature) {

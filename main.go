@@ -7,29 +7,29 @@ import (
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/skaisanlahti/try-go-htmx/assets"
-	"github.com/skaisanlahti/try-go-htmx/infrastructure"
-	"github.com/skaisanlahti/try-go-htmx/sessions"
+	"github.com/skaisanlahti/try-go-htmx/settings"
 	"github.com/skaisanlahti/try-go-htmx/todos"
 	"github.com/skaisanlahti/try-go-htmx/users"
+	"github.com/skaisanlahti/try-go-htmx/users/sessions"
 )
 
 func main() {
-	variables := infrastructure.ReadEnvironment(".env.development")
-	database := infrastructure.OpenDatabase(variables.Database)
+	variables := settings.ReadEnvironment(".env.development")
+	database := settings.OpenDatabase(variables.Database)
 	defer database.Close()
 
 	router := http.NewServeMux()
 	session := sessions.NewStore(sessions.StoreOptions{
-		CookieName:        "sid",
-		SessionDuration:   60 * time.Second,
-		SessionSecret:     sessions.NewSecret(),
-		SessionRepository: sessions.NewInMemoryRepository(),
-		Secure:            infrastructure.IsProduction(variables.Mode),
+		CookieName:      "sid",
+		SessionDuration: 60 * time.Second,
+		SessionSecret:   sessions.NewSecret(32),
+		SessionStorage:  sessions.NewMemorySessionRepository(),
+		Secure:          settings.IsProduction(variables.Mode),
 	})
 
-	assets.MapAssetHandlers(router)
-	users.MapHtmxHandlers(router, database, session)
-	todos.MapHtmxHandlers(router, database, session)
+	assets.UseAssets(router)
+	users.UseUserRoutes(router, database, session)
+	todos.UseTodoRoutes(router, database, session)
 
 	server := http.Server{
 		Addr:         variables.Address,

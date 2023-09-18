@@ -1,4 +1,4 @@
-package psql
+package repositories
 
 import (
 	"database/sql"
@@ -7,17 +7,17 @@ import (
 	"github.com/skaisanlahti/try-go-htmx/todos/domain"
 )
 
-type TodoRepository struct {
+type PsqlTodoRepository struct {
 	Database *sql.DB
 }
 
-func NewTodoRepository(database *sql.DB) *TodoRepository {
-	return &TodoRepository{database}
+func NewPsqlTodoRepository(database *sql.DB) *PsqlTodoRepository {
+	return &PsqlTodoRepository{database}
 }
 
 const selectTodos string = `SELECT * FROM "Todos" ORDER BY "Task" ASC`
 
-func (repository *TodoRepository) GetTodos() []domain.Todo {
+func (repository *PsqlTodoRepository) GetTodos() []domain.Todo {
 	var todos []domain.Todo
 	rows, err := repository.Database.Query(selectTodos)
 	if err != nil {
@@ -41,7 +41,7 @@ func (repository *TodoRepository) GetTodos() []domain.Todo {
 
 const selectTodoById string = `SELECT * FROM "Todos" WHERE "Id" = $1`
 
-func (repository *TodoRepository) GetTodoById(id int) (domain.Todo, error) {
+func (repository *PsqlTodoRepository) GetTodoById(id int) (domain.Todo, error) {
 	var todo domain.Todo
 	row := repository.Database.QueryRow(selectTodoById, id)
 	if err := row.Scan(&todo.Id, &todo.Task, &todo.Done); err != nil {
@@ -54,7 +54,7 @@ func (repository *TodoRepository) GetTodoById(id int) (domain.Todo, error) {
 
 const insertTodo string = `INSERT INTO "Todos" ("Task", "Done") VALUES ($1, $2)`
 
-func (repository *TodoRepository) AddTodo(todo domain.Todo) error {
+func (repository *PsqlTodoRepository) AddTodo(todo domain.Todo) error {
 	if _, err := repository.Database.Exec(insertTodo, &todo.Task, &todo.Done); err != nil {
 		log.Println(err.Error())
 		return err
@@ -65,7 +65,7 @@ func (repository *TodoRepository) AddTodo(todo domain.Todo) error {
 
 const updateTodo string = `UPDATE "Todos" SET "Task" = $2, "Done" = $3 WHERE "Id" = $1`
 
-func (repository *TodoRepository) UpdateTodo(todo domain.Todo) error {
+func (repository *PsqlTodoRepository) UpdateTodo(todo domain.Todo) error {
 	if _, err := repository.Database.Exec(updateTodo, &todo.Id, &todo.Task, &todo.Done); err != nil {
 		log.Println(err.Error())
 		return err
@@ -76,7 +76,7 @@ func (repository *TodoRepository) UpdateTodo(todo domain.Todo) error {
 
 const deleteTodo string = `DELETE FROM "Todos" WHERE "Id" = $1`
 
-func (repository *TodoRepository) RemoveTodo(id int) error {
+func (repository *PsqlTodoRepository) RemoveTodo(id int) error {
 	if _, err := repository.Database.Exec(deleteTodo, id); err != nil {
 		log.Println(err.Error())
 		return err

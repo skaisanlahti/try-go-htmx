@@ -1,14 +1,12 @@
-package middleware
+package sessions
 
 import (
 	"net/http"
-
-	"github.com/skaisanlahti/try-go-htmx/sessions"
 )
 
 type SessionStore interface {
-	Validate(request *http.Request) (*sessions.Session, error)
-	Extend(*sessions.Session) (*http.Cookie, error)
+	Validate(request *http.Request) (*Session, error)
+	Extend(*Session) (*http.Cookie, error)
 }
 
 type RequireSessionMiddleware struct {

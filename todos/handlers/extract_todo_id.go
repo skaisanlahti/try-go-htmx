@@ -1,4 +1,4 @@
-package htmx
+package handlers
 
 import (
 	"errors"

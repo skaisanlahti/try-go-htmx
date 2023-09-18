@@ -1,4 +1,4 @@
-package psql
+package repositories
 
 import (
 	"database/sql"

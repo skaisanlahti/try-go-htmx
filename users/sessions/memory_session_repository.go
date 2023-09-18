@@ -7,13 +7,13 @@ import (
 	"time"
 )
 
-type InMemoryRepository struct {
+type MemorySessionRepository struct {
 	sessions map[string]*Session
 	locker   sync.RWMutex
 }
 
-func NewInMemoryRepository() *InMemoryRepository {
-	repository := &InMemoryRepository{
+func NewMemorySessionRepository() *MemorySessionRepository {
+	repository := &MemorySessionRepository{
 		sessions: make(map[string]*Session),
 	}
 
@@ -21,7 +21,7 @@ func NewInMemoryRepository() *InMemoryRepository {
 	return repository
 }
 
-func (repository *InMemoryRepository) Find(sessionId string) (*Session, error) {
+func (repository *MemorySessionRepository) Find(sessionId string) (*Session, error) {
 	repository.locker.RLock()
 	defer repository.locker.RUnlock()
 	session, ok := repository.sessions[sessionId]
@@ -32,7 +32,7 @@ func (repository *InMemoryRepository) Find(sessionId string) (*Session, error) {
 	return session, nil
 }
 
-func (repository *InMemoryRepository) Add(session *Session) error {
+func (repository *MemorySessionRepository) Add(session *Session) error {
 	repository.locker.Lock()
 	defer repository.locker.Unlock()
 	for _, s := range repository.sessions {
@@ -45,14 +45,14 @@ func (repository *InMemoryRepository) Add(session *Session) error {
 	return nil
 }
 
-func (repository *InMemoryRepository) Update(session *Session) error {
+func (repository *MemorySessionRepository) Update(session *Session) error {
 	repository.locker.Lock()
 	defer repository.locker.Unlock()
 	repository.sessions[session.Id] = session
 	return nil
 }
 
-func (repository *InMemoryRepository) Remove(sessionId string) error {
+func (repository *MemorySessionRepository) Remove(sessionId string) error {
 	repository.locker.Lock()
 	defer repository.locker.Unlock()
 	delete(repository.sessions, sessionId)
@@ -64,7 +64,7 @@ const (
 	timeFormat       string        = "2006/01/02 15:04:05 -0700"
 )
 
-func removeExpired(repository *InMemoryRepository) {
+func removeExpired(repository *MemorySessionRepository) {
 	log.Printf("Started a session clean up process at %s.", time.Now().Format(timeFormat))
 	for {
 		log.Printf("Next expired session clean up scheduled at %s.", time.Now().Add(checkingInterval).Format(timeFormat))

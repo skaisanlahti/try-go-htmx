@@ -15,7 +15,7 @@ const (
 	path              = "/dist/"
 )
 
-func MapAssetHandlers(router *http.ServeMux) {
+func UseAssets(router *http.ServeMux) {
 	assetFiles, err := fs.Sub(embeddedFiles, embeddedFilesRoot)
 	if err != nil {
 		log.Fatal(err)
