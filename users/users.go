@@ -21,8 +21,10 @@ func UseUserRoutes(router *http.ServeMux, database *sql.DB, store *sessions.Stor
 	getLoginPage := handlers.NewGetLoginPageHandler(handlers.NewHtmxGetLoginPageRenderer(htmlTemplates.LoginPage))
 	getLogoutPage := handlers.NewGetLogoutPageHandler(handlers.NewHtmxGetLogoutPageRenderer(htmlTemplates.LogoutPage))
 	addUser := handlers.NewAddUserHandler(passwordEncoder, userRepository, store, handlers.NewHtmxAddUserRenderer(htmlTemplates.RegisterPage))
-	loginUser := handlers.NewLoginUserHandler(passwordEncoder, userRepository, store, handlers.NewHtmxLoginUserRender(htmlTemplates.LoginPage))
 	logoutUser := handlers.NewLogoutUserHandler(store)
+	loginUser := handlers.NewLoginUserHandler(passwordEncoder, userRepository, store, handlers.NewHtmxLoginUserRender(htmlTemplates.LoginPage),
+		handlers.LoginUserOptions{RecalculateOutdatedKeys: true},
+	)
 
 	router.Handle("/users/logout", logging.LogRequest(sessions.RequireSession(logoutUser, store)))
 	router.Handle("/users/login", logging.LogRequest(loginUser))

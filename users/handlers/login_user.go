@@ -12,11 +12,12 @@ import (
 
 type LoginUserPasswordEncoder interface {
 	NewKey(password string) ([]byte, error)
-	VerifyKey(encodedKey []byte, candidatePassword string) (bool, error)
+	VerifyKey(encodedKey []byte, candidatePassword string, recalculateOutdatedKeys bool) (bool, []byte, error)
 }
 
 type LoginUserRepository interface {
 	GetUserByName(name string) (domain.User, error)
+	UpdateUserPassword(user domain.User) error
 }
 
 type LoginUserSessionStore interface {
@@ -27,12 +28,17 @@ type LoginUserRenderer interface {
 	RenderLoginForm(name string, password string, errorMessage string) []byte
 }
 
+type LoginUserOptions struct {
+	RecalculateOutdatedKeys bool
+}
+
 type LoginUserHandler struct {
 	encoder    LoginUserPasswordEncoder
 	repository LoginUserRepository
 	sessions   LoginUserSessionStore
 	renderer   LoginUserRenderer
 	fakeUser   domain.User
+	options    LoginUserOptions
 }
 
 func NewLoginUserHandler(
@@ -40,6 +46,7 @@ func NewLoginUserHandler(
 	repository LoginUserRepository,
 	sessions LoginUserSessionStore,
 	renderer LoginUserRenderer,
+	options LoginUserOptions,
 ) *LoginUserHandler {
 	fakeKey, err := encoder.NewKey("Fake Passphrase to compare")
 	if err != nil {
@@ -51,7 +58,7 @@ func NewLoginUserHandler(
 		log.Panicln("Failed to create fake user for login.")
 	}
 
-	return &LoginUserHandler{encoder, repository, sessions, renderer, fakeUser}
+	return &LoginUserHandler{encoder, repository, sessions, renderer, fakeUser, options}
 }
 
 func (handler *LoginUserHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
@@ -64,15 +71,20 @@ func (handler *LoginUserHandler) ServeHTTP(response http.ResponseWriter, request
 		response.Write(html)
 	}
 
-	isPasswordValid := false
 	user, err := handler.repository.GetUserByName(name)
 	if err != nil {
-		handler.encoder.VerifyKey(handler.fakeUser.Password, password)
-	} else {
-		isPasswordValid, _ = handler.encoder.VerifyKey(user.Password, password)
+		handler.encoder.VerifyKey(handler.fakeUser.Password, password, handler.options.RecalculateOutdatedKeys)
+		renderError("Invalid credentials.")
+		return
 	}
 
-	if !isPasswordValid {
+	isPasswordCorrect, newKey, _ := handler.encoder.VerifyKey(user.Password, password, handler.options.RecalculateOutdatedKeys)
+	if newKey != nil {
+		user.Password = newKey
+		go handler.repository.UpdateUserPassword(user)
+	}
+
+	if !isPasswordCorrect {
 		renderError("Invalid credentials.")
 		return
 	}

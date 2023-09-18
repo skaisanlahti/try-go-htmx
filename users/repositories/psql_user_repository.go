@@ -66,6 +66,17 @@ func (repository *UserRepository) AddUser(user domain.User) error {
 	return nil
 }
 
+const updateUserPassword string = `Update "Users" Set "Password" = $2 WHERE "Id" = $1`
+
+func (repository *UserRepository) UpdateUserPassword(user domain.User) error {
+	if _, err := repository.Database.Exec(updateUserPassword, &user.Id, &user.Password); err != nil {
+		log.Println(err.Error())
+		return err
+	}
+
+	return nil
+}
+
 const deleteUser string = `DELETE FROM "Users" WHERE "Id" = $1`
 
 func (repository *UserRepository) RemoveUser(id int) error {

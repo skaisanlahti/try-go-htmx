@@ -57,25 +57,35 @@ func (encoder *Argon2Encoder) NewKey(password string) ([]byte, error) {
 	return encodedKey, nil
 }
 
-func (encoder *Argon2Encoder) VerifyKey(encodedKey []byte, candidatePassword string) (bool, error) {
+func (encoder *Argon2Encoder) VerifyKey(encodedKey []byte, candidatePassword string, recalculateOutdatedKeys bool) (bool, []byte, error) {
 	salt, key, options, err := decodeKey(encodedKey)
 	if err != nil {
-		return false, err
+		return false, nil, err
 	}
 
 	start := time.Now()
 	candidateKey := argon2.IDKey([]byte(candidatePassword), salt, options.Time, options.Memory, options.Threads, options.KeyLength)
-	duration := time.Now().Sub(start).Milliseconds()
-	if duration < 100 {
-		log.Printf("Password encoding took less than 100 ms (%d ms). Consider increasing encoding difficult.", duration)
+	durationMs := time.Now().Sub(start).Milliseconds()
+	if durationMs < 100 {
+		log.Printf("Password encoding took less than 100 ms (%d ms). Consider increasing encoding difficult.", durationMs)
 	}
 
-	if duration > 500 {
-		log.Printf("Password encoding took more than 500 ms (%d ms). Consider decreasing encoding difficult.", duration)
+	if durationMs > 500 {
+		log.Printf("Password encoding took more than 500 ms (%d ms). Consider decreasing encoding difficult.", durationMs)
 	}
 
 	result := subtle.ConstantTimeCompare(key, candidateKey)
-	return result == 1, nil
+	isPasswordCorrect := result == 1
+
+	var newKey []byte
+	if recalculateOutdatedKeys {
+		areOptionsCorrect := encoder.verifyOptions(options)
+		if !areOptionsCorrect {
+			newKey, _ = encoder.NewKey(candidatePassword)
+		}
+	}
+
+	return isPasswordCorrect, newKey, nil
 }
 
 func newSalt(size uint32) []byte {
@@ -91,7 +101,7 @@ func newSalt(size uint32) []byte {
 func encodeKey(salt []byte, key []byte, options Argon2idOptions) []byte {
 	encodedSalt := base64.RawStdEncoding.EncodeToString(salt)
 	encodedKey := base64.RawStdEncoding.EncodeToString(key)
-	return []byte(fmt.Sprintf(
+	fullEncodedKey := []byte(fmt.Sprintf(
 		"$argon2id$version=%d$time=%d,memory=%d,threads=%d$%s$%s",
 		options.Version,
 		options.Time,
@@ -100,6 +110,8 @@ func encodeKey(salt []byte, key []byte, options Argon2idOptions) []byte {
 		encodedSalt,
 		encodedKey,
 	))
+
+	return fullEncodedKey
 }
 
 func decodeKey(encodedKey []byte) ([]byte, []byte, *Argon2idOptions, error) {
@@ -137,4 +149,28 @@ func decodeKey(encodedKey []byte) ([]byte, []byte, *Argon2idOptions, error) {
 
 	options.KeyLength = uint32(len(key))
 	return salt, key, options, nil
+}
+
+func (encoder *Argon2Encoder) verifyOptions(options *Argon2idOptions) bool {
+	if encoder.options.Time != options.Time {
+		return false
+	}
+
+	if encoder.options.Memory != options.Memory {
+		return false
+	}
+
+	if encoder.options.Threads != options.Threads {
+		return false
+	}
+
+	if encoder.options.SaltLength != options.SaltLength {
+		return false
+	}
+
+	if encoder.options.KeyLength != options.KeyLength {
+		return false
+	}
+
+	return true
 }
