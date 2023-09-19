@@ -29,10 +29,9 @@ func (encoder *BcryptEncoder) NewKey(password string) ([]byte, error) {
 	return key, nil
 }
 
-func (encoder *BcryptEncoder) VerifyKey(key []byte, candidatePassword string, recalculateOutdatedKeys bool) (bool, []byte, error) {
-	err := bcrypt.CompareHashAndPassword(key, []byte(candidatePassword))
-	isPasswordCorrect := err == nil
-	return isPasswordCorrect, nil, err
+func (encoder *BcryptEncoder) VerifyKey(key []byte, candidatePassword string, recalculateOutdatedKeys bool) (bool, []byte) {
+	isPasswordCorrect := bcrypt.CompareHashAndPassword(key, []byte(candidatePassword)) == nil
+	return isPasswordCorrect, nil
 }
 
 func (encoder *BcryptEncoder) VerifyOptions(cost int) bool {

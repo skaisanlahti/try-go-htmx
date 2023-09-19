@@ -44,23 +44,23 @@ func (encoder *Argon2Encoder) NewKey(password string) ([]byte, error) {
 	salt := newSalt(encoder.options.SaltLength)
 	start := time.Now()
 	key := argon2.IDKey([]byte(password), salt, encoder.options.Time, encoder.options.Memory, encoder.options.Threads, encoder.options.KeyLength)
-	duration := time.Now().Sub(start).Milliseconds()
-	if duration < 100 {
-		log.Printf("Password encoding took less than 100 ms (%d ms). Consider increasing encoding difficult.", duration)
+	durationMs := time.Now().Sub(start).Milliseconds()
+	if durationMs < 100 {
+		log.Printf("Password encoding took less than 100 ms (%d ms). Consider increasing encoding difficult.", durationMs)
 	}
 
-	if duration > 500 {
-		log.Printf("Password encoding took more than 500 ms (%d ms). Consider decreasing encoding difficult.", duration)
+	if durationMs > 500 {
+		log.Printf("Password encoding took more than 500 ms (%d ms). Consider decreasing encoding difficult.", durationMs)
 	}
 
 	encodedKey := encodeKey(salt, key, encoder.options)
 	return encodedKey, nil
 }
 
-func (encoder *Argon2Encoder) VerifyKey(encodedKey []byte, candidatePassword string, recalculateOutdatedKeys bool) (bool, chan []byte, error) {
+func (encoder *Argon2Encoder) VerifyKey(encodedKey []byte, candidatePassword string, recalculateOutdatedKeys bool) (bool, chan []byte) {
 	salt, key, options, err := decodeKey(encodedKey)
 	if err != nil {
-		return false, nil, err
+		return false, nil
 	}
 
 	start := time.Now()
@@ -74,18 +74,17 @@ func (encoder *Argon2Encoder) VerifyKey(encodedKey []byte, candidatePassword str
 		log.Printf("Password encoding took more than 500 ms (%d ms). Consider decreasing encoding difficult.", durationMs)
 	}
 
-	result := subtle.ConstantTimeCompare(key, candidateKey)
-	isPasswordCorrect := result == 1
-	var newKeyChannel chan []byte
+	isPasswordCorrect := subtle.ConstantTimeCompare(key, candidateKey) == 1
+	var newKeyResult chan []byte
 	if isPasswordCorrect && recalculateOutdatedKeys && !encoder.verifyOptions(options) {
-		newKeyChannel = make(chan []byte)
-		go encoder.recalculateKey(candidatePassword, newKeyChannel)
+		newKeyResult = make(chan []byte)
+		go encoder.recalculateKey(candidatePassword, newKeyResult)
 	}
 
-	return isPasswordCorrect, newKeyChannel, nil
+	return isPasswordCorrect, newKeyResult
 }
 
-func (encoder *Argon2Encoder) recalculateKey(password string, newKeyChannel chan []byte) {
+func (encoder *Argon2Encoder) recalculateKey(password string, newKeyChannel chan<- []byte) {
 	defer close(newKeyChannel)
 	newKey, _ := encoder.NewKey(password)
 	newKeyChannel <- newKey

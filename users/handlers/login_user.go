@@ -12,7 +12,7 @@ import (
 
 type LoginUserPasswordEncoder interface {
 	NewKey(password string) ([]byte, error)
-	VerifyKey(encodedKey []byte, candidatePassword string, recalculateOutdatedKeys bool) (bool, chan []byte, error)
+	VerifyKey(encodedKey []byte, candidatePassword string, recalculateOutdatedKeys bool) (bool, chan []byte)
 }
 
 type LoginUserRepository interface {
@@ -78,7 +78,7 @@ func (handler *LoginUserHandler) ServeHTTP(response http.ResponseWriter, request
 		return
 	}
 
-	isPasswordCorrect, newKeyChannel, _ := handler.encoder.VerifyKey(user.Password, password, handler.options.RecalculateOutdatedKeys)
+	isPasswordCorrect, newKeyChannel := handler.encoder.VerifyKey(user.Password, password, handler.options.RecalculateOutdatedKeys)
 	if !isPasswordCorrect {
 		renderError("Invalid credentials.")
 		return
@@ -99,8 +99,8 @@ func (handler *LoginUserHandler) ServeHTTP(response http.ResponseWriter, request
 	response.WriteHeader(http.StatusOK)
 }
 
-func (handler *LoginUserHandler) updatePassword(user domain.User, newKeyChannel chan []byte) {
-	user.Password = <-newKeyChannel
+func (handler *LoginUserHandler) updatePassword(user domain.User, newKeyResult <-chan []byte) {
+	user.Password = <-newKeyResult
 	err := handler.repository.UpdateUserPassword(user)
 	if err != nil {
 		log.Printf("[ERROR] User: %s | Key update failed: %s", user.Name, err.Error())
