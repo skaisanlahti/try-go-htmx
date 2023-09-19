@@ -16,6 +16,7 @@ func UseUserRoutes(router *http.ServeMux, database *sql.DB, store *sessions.Stor
 	htmlTemplates := templates.ParseTemplates()
 	userRepository := repositories.NewUserRepository(database)
 	passwordEncoder := passwords.NewArgon2Encoder(passwords.DefaultArgon2idOptions)
+	// passwordEncoder := passwords.NewBcryptEncoder(12)
 
 	getRegisterPage := handlers.NewGetRegisterPageHandler(handlers.NewHtmxGetRegisterPageRenderer(htmlTemplates.RegisterPage))
 	getLoginPage := handlers.NewGetLoginPageHandler(handlers.NewHtmxGetLoginPageRenderer(htmlTemplates.LoginPage))

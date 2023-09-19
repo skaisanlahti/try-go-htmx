@@ -100,12 +100,16 @@ func (handler *LoginUserHandler) ServeHTTP(response http.ResponseWriter, request
 }
 
 func (handler *LoginUserHandler) updatePassword(user domain.User, newKeyResult <-chan []byte) {
-	user.Password = <-newKeyResult
+	newKey, ok := <-newKeyResult
+	if !ok {
+		log.Printf("User: %s | Key update failed: recalculation failed.", user.Name)
+		return
+	}
+
+	user.Password = newKey
 	err := handler.repository.UpdateUserPassword(user)
 	if err != nil {
-		log.Printf("[ERROR] User: %s | Key update failed: %s", user.Name, err.Error())
-	} else {
-		log.Printf("[INFO] User: %s | Key update succeeded.", user.Name)
+		log.Printf("User: %s | Key update failed: database update failed.", user.Name)
 	}
 }
 
