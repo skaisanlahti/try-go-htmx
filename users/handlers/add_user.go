@@ -95,7 +95,7 @@ func (handler *AddUserHandler) ServeHTTP(response http.ResponseWriter, request *
 	}
 
 	http.SetCookie(response, cookie)
-	response.Header().Add("HX-Redirect", "/todos")
+	response.Header().Add("HX-Location", "/todos")
 	response.WriteHeader(http.StatusOK)
 }
 

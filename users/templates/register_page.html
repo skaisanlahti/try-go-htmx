@@ -12,7 +12,7 @@
     <title>Go htmx test - Login</title>
   </head>
   <body>
-    <main id="page" class="container">
+    <main id="page" class="container" hx-boost="true">
       <h1>Register</h1>
       <!-- .Key as name attribute required to stop firefox from preserving values through page refresh -->
       {{ block "form" . }}
@@ -32,7 +32,7 @@
         <input
           type="password"
           name="password"
-          placeholder="Password"
+          placeholder="Password..."
           value="{{ .Password }}"
         />
         <p>{{ .Error }}</p>

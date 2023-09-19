@@ -26,6 +26,6 @@ func (handler *LogoutUserHandler) ServeHTTP(response http.ResponseWriter, reques
 	}
 
 	http.SetCookie(response, cookie)
-	response.Header().Add("HX-Redirect", "/logout")
+	response.Header().Add("HX-Location", "/logout")
 	response.WriteHeader(http.StatusOK)
 }
