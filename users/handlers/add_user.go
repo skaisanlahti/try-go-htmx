@@ -55,7 +55,7 @@ func (handler *AddUserHandler) ServeHTTP(response http.ResponseWriter, request *
 	}
 
 	if name == "" {
-		renderError("User name is required.")
+		renderError("Username is required.")
 		return
 	}
 
@@ -65,7 +65,7 @@ func (handler *AddUserHandler) ServeHTTP(response http.ResponseWriter, request *
 
 	newUser, err := handler.repository.GetUserByName(name)
 	if err == nil {
-		renderError("User name already exists.")
+		renderError("Username already exists.")
 		return
 	}
 

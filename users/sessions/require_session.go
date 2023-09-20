@@ -27,7 +27,7 @@ func (middleware *RequireSessionMiddleware) ServeHTTP(response http.ResponseWrit
 		}
 
 		// htmx redirect
-		response.Header().Add("HX-Redirect", "/login")
+		response.Header().Add("HX-Location", "/login")
 		response.WriteHeader(http.StatusOK)
 		return
 	}
