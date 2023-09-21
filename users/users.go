@@ -18,19 +18,27 @@ func UseUserRoutes(router *http.ServeMux, database *sql.DB, store *sessions.Stor
 	passwordEncoder := passwords.NewArgon2Encoder(passwords.DefaultArgon2idOptions)
 	// passwordEncoder := passwords.NewBcryptEncoder(12)
 
-	getRegisterPage := handlers.NewGetRegisterPageHandler(handlers.NewHtmxGetRegisterPageRenderer(htmlTemplates.RegisterPage))
-	getLoginPage := handlers.NewGetLoginPageHandler(handlers.NewHtmxGetLoginPageRenderer(htmlTemplates.LoginPage))
-	getLogoutPage := handlers.NewGetLogoutPageHandler(handlers.NewHtmxGetLogoutPageRenderer(htmlTemplates.LogoutPage))
-	addUser := handlers.NewAddUserHandler(passwordEncoder, userRepository, store, handlers.NewHtmxAddUserRenderer(htmlTemplates.RegisterPage))
 	logoutUser := handlers.NewLogoutUserHandler(store)
-	loginUser := handlers.NewLoginUserHandler(passwordEncoder, userRepository, store, handlers.NewHtmxLoginUserRender(htmlTemplates.LoginPage),
-		handlers.LoginUserOptions{RecalculateOutdatedKeys: true},
-	)
-
 	router.Handle("/users/logout", logging.LogRequest(sessions.RequireSession(logoutUser, store)))
+
+	loginUserView := handlers.NewHtmxLoginUserView(htmlTemplates.LoginPage)
+	loginOptions := handlers.LoginUserOptions{RecalculateOutdatedKeys: true}
+	loginUser := handlers.NewLoginUserHandler(passwordEncoder, userRepository, store, loginUserView, loginOptions)
 	router.Handle("/users/login", logging.LogRequest(loginUser))
+
+	addUserView := handlers.NewHtmxAddUserView(htmlTemplates.RegisterPage)
+	addUser := handlers.NewAddUserHandler(passwordEncoder, userRepository, store, addUserView)
 	router.Handle("/users/add", logging.LogRequest(addUser))
+
+	getLogoutPageView := handlers.NewHtmxGetLogoutPageView(htmlTemplates.LogoutPage)
+	getLogoutPage := handlers.NewGetLogoutPageHandler(getLogoutPageView)
 	router.Handle("/logout", logging.LogRequest(getLogoutPage))
+
+	getLoginPageView := handlers.NewHtmxGetLoginPageView(htmlTemplates.LoginPage)
+	getLoginPage := handlers.NewGetLoginPageHandler(getLoginPageView)
 	router.Handle("/login", logging.LogRequest(getLoginPage))
+
+	getRegisterPageView := handlers.NewHtmxGetRegisterPageView(htmlTemplates.RegisterPage)
+	getRegisterPage := handlers.NewGetRegisterPageHandler(getRegisterPageView)
 	router.Handle("/register", logging.LogRequest(getRegisterPage))
 }

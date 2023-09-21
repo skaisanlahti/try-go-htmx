@@ -34,18 +34,18 @@ type LoginPage struct {
 	Error    string
 }
 
-type HtmxGetLoginPageRenderer struct {
+type HtmxGetLoginPageView struct {
 	loginPage *template.Template
 }
 
-func NewHtmxGetLoginPageRenderer(loginPage *template.Template) *HtmxGetLoginPageRenderer {
-	return &HtmxGetLoginPageRenderer{loginPage}
+func NewHtmxGetLoginPageView(loginPage *template.Template) *HtmxGetLoginPageView {
+	return &HtmxGetLoginPageView{loginPage}
 }
 
-func (renderer *HtmxGetLoginPageRenderer) RenderLoginPage() []byte {
+func (view *HtmxGetLoginPageView) RenderLoginPage() []byte {
 	templateData := LoginPage{Key: time.Now().UnixMilli()}
 	buffer := &bytes.Buffer{}
-	err := renderer.loginPage.Execute(buffer, templateData)
+	err := view.loginPage.Execute(buffer, templateData)
 	if err != nil {
 		log.Panicln(err.Error())
 	}

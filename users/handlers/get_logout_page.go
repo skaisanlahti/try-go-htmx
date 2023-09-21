@@ -26,17 +26,17 @@ func (handler *GetLogoutPageHandler) ServeHTTP(response http.ResponseWriter, req
 	response.Write(html)
 }
 
-type HtmxGetLogoutPageRenderer struct {
+type HtmxGetLogoutPageView struct {
 	logoutPage *template.Template
 }
 
-func NewHtmxGetLogoutPageRenderer(logoutPage *template.Template) *HtmxGetLogoutPageRenderer {
-	return &HtmxGetLogoutPageRenderer{logoutPage}
+func NewHtmxGetLogoutPageView(logoutPage *template.Template) *HtmxGetLogoutPageView {
+	return &HtmxGetLogoutPageView{logoutPage}
 }
 
-func (renderer *HtmxGetLogoutPageRenderer) RenderLogoutPage() []byte {
+func (view *HtmxGetLogoutPageView) RenderLogoutPage() []byte {
 	buffer := &bytes.Buffer{}
-	err := renderer.logoutPage.Execute(buffer, nil)
+	err := view.logoutPage.Execute(buffer, nil)
 	if err != nil {
 		log.Panicln(err.Error())
 	}

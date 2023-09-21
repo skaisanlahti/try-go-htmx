@@ -34,18 +34,18 @@ type RegisterPage struct {
 	Error    string
 }
 
-type HtmxGetRegisterPageRenderer struct {
+type HtmxGetRegisterPageView struct {
 	registerPage *template.Template
 }
 
-func NewHtmxGetRegisterPageRenderer(addUserPage *template.Template) *HtmxGetRegisterPageRenderer {
-	return &HtmxGetRegisterPageRenderer{addUserPage}
+func NewHtmxGetRegisterPageView(addUserPage *template.Template) *HtmxGetRegisterPageView {
+	return &HtmxGetRegisterPageView{addUserPage}
 }
 
-func (renderer *HtmxGetRegisterPageRenderer) RenderRegisterPage() []byte {
+func (view *HtmxGetRegisterPageView) RenderRegisterPage() []byte {
 	templateData := RegisterPage{Key: time.Now().UnixMilli()}
 	buffer := &bytes.Buffer{}
-	err := renderer.registerPage.Execute(buffer, templateData)
+	err := view.registerPage.Execute(buffer, templateData)
 	if err != nil {
 		log.Panicln(err.Error())
 	}

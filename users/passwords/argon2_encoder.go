@@ -154,8 +154,8 @@ func (encoder *Argon2Encoder) areOptionsOutdated(options *Argon2idOptions) bool 
 	return false
 }
 
-func newSalt(size uint32) []byte {
-	salt := make([]byte, size)
+func newSalt(length uint32) []byte {
+	salt := make([]byte, length)
 	_, err := rand.Read(salt)
 	if err != nil {
 		log.Panicln(err)

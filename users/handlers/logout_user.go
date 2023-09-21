@@ -4,28 +4,27 @@ import (
 	"net/http"
 )
 
-type LogoutSessionStore interface {
-	Remove(request *http.Request) (*http.Cookie, error)
+type LogoutUserSession interface {
+	ClearSession(response http.ResponseWriter, request *http.Request) error
 }
 
 type LogoutUserHandler struct {
-	sessions LogoutSessionStore
+	session LogoutUserSession
 }
 
 func NewLogoutUserHandler(
-	sessions LogoutSessionStore,
+	session LogoutUserSession,
 ) *LogoutUserHandler {
-	return &LogoutUserHandler{sessions}
+	return &LogoutUserHandler{session}
 }
 
 func (handler *LogoutUserHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
-	cookie, err := handler.sessions.Remove(request)
+	err := handler.session.ClearSession(response, request)
 	if err != nil {
 		response.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	http.SetCookie(response, cookie)
 	response.Header().Add("HX-Location", "/logout")
 	response.WriteHeader(http.StatusOK)
 }

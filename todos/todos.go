@@ -12,20 +12,28 @@ import (
 )
 
 func UseTodoRoutes(router *http.ServeMux, database *sql.DB, store *sessions.Store) {
-	repository := repositories.NewPsqlTodoRepository(database)
 	todoPage := templates.ParseTemplates().TodoPage
+	repository := repositories.NewPsqlTodoRepository(database)
 
-	getTodoPage := handlers.NewGetTodoPageHandler(repository, handlers.NewHtmxGetTodoPageView(todoPage))
-	getTodoList := handlers.NewGetTodoListHandler(repository, handlers.NewHtmxGetTodoListView(todoPage))
-	addTodo := handlers.NewAddTodoHandler(repository, handlers.NewHtmxAddTodoView(todoPage))
-	toggleTodo := handlers.NewToggleTodoHandler(repository, handlers.NewHtmxToggleTodoView(todoPage))
 	removeTodo := handlers.NewRemoveTodoHandler(repository)
-
 	router.Handle("/todos/remove", logging.LogRequest(sessions.RequireSession(removeTodo, store)))
+
+	toggleTodoView := handlers.NewHtmxToggleTodoView(todoPage)
+	toggleTodo := handlers.NewToggleTodoHandler(repository, toggleTodoView)
 	router.Handle("/todos/toggle", logging.LogRequest(sessions.RequireSession(toggleTodo, store)))
+
+	addTodoView := handlers.NewHtmxAddTodoView(todoPage)
+	addTodo := handlers.NewAddTodoHandler(repository, addTodoView)
 	router.Handle("/todos/add", logging.LogRequest(sessions.RequireSession(addTodo, store)))
+
+	getTodoListView := handlers.NewHtmxGetTodoListView(todoPage)
+	getTodoList := handlers.NewGetTodoListHandler(repository, getTodoListView)
 	router.Handle("/todos/list", logging.LogRequest(sessions.RequireSession(getTodoList, store)))
+
+	getTodoPageView := handlers.NewHtmxGetTodoPageView(todoPage)
+	getTodoPage := handlers.NewGetTodoPageHandler(repository, getTodoPageView)
 	router.Handle("/todos", logging.LogRequest(sessions.RequireSession(getTodoPage, store)))
+
 	router.HandleFunc("/", func(response http.ResponseWriter, request *http.Request) {
 		http.Redirect(response, request, "/todos", http.StatusMovedPermanently)
 	})

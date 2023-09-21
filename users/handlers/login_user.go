@@ -20,8 +20,8 @@ type LoginUserRepository interface {
 	UpdateUserPassword(user domain.User) error
 }
 
-type LoginUserSessionStore interface {
-	Add(userId int) (*http.Cookie, error)
+type LoginUserSession interface {
+	StartSession(response http.ResponseWriter, userId int) error
 }
 
 type LoginUserRenderer interface {
@@ -35,7 +35,7 @@ type LoginUserOptions struct {
 type LoginUserHandler struct {
 	encoder    LoginUserPasswordEncoder
 	repository LoginUserRepository
-	sessions   LoginUserSessionStore
+	session    LoginUserSession
 	renderer   LoginUserRenderer
 	options    LoginUserOptions
 	fakeUser   domain.User
@@ -44,11 +44,11 @@ type LoginUserHandler struct {
 func NewLoginUserHandler(
 	encoder LoginUserPasswordEncoder,
 	repository LoginUserRepository,
-	sessions LoginUserSessionStore,
+	session LoginUserSession,
 	renderer LoginUserRenderer,
 	options LoginUserOptions,
 ) *LoginUserHandler {
-	fakeKey, err := encoder.NewKey("Fake Passphrase to compare")
+	fakeKey, err := encoder.NewKey("Fake password to compare")
 	if err != nil {
 		log.Panicln("Failed to create fake key for login.")
 	}
@@ -58,7 +58,7 @@ func NewLoginUserHandler(
 		log.Panicln("Failed to create fake user for login.")
 	}
 
-	return &LoginUserHandler{encoder, repository, sessions, renderer, options, fakeUser}
+	return &LoginUserHandler{encoder, repository, session, renderer, options, fakeUser}
 }
 
 func (handler *LoginUserHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
@@ -88,13 +88,12 @@ func (handler *LoginUserHandler) ServeHTTP(response http.ResponseWriter, request
 		go handler.updatePassword(user, newKeyChannel)
 	}
 
-	cookie, err := handler.sessions.Add(user.Id)
+	err = handler.session.StartSession(response, user.Id)
 	if err != nil {
 		renderError("Internal session error.")
 		return
 	}
 
-	http.SetCookie(response, cookie)
 	response.Header().Add("HX-Location", "/todos")
 	response.WriteHeader(http.StatusOK)
 }
@@ -113,15 +112,15 @@ func (handler *LoginUserHandler) updatePassword(user domain.User, newKeyResult <
 	}
 }
 
-type HtmxLoginUserRenderer struct {
+type HtmxLoginUserView struct {
 	loginPage *template.Template
 }
 
-func NewHtmxLoginUserRender(loginPage *template.Template) *HtmxLoginUserRenderer {
-	return &HtmxLoginUserRenderer{loginPage}
+func NewHtmxLoginUserView(loginPage *template.Template) *HtmxLoginUserView {
+	return &HtmxLoginUserView{loginPage}
 }
 
-func (renderer *HtmxLoginUserRenderer) RenderLoginForm(name string, password string, errorMessage string) []byte {
+func (renderer *HtmxLoginUserView) RenderLoginForm(name string, password string, errorMessage string) []byte {
 	templateData := LoginPage{time.Now().UnixMilli(), name, password, errorMessage}
 	buffer := &bytes.Buffer{}
 	err := renderer.loginPage.ExecuteTemplate(buffer, "form", templateData)

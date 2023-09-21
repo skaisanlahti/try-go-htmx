@@ -24,23 +24,23 @@ type AddUserRenderer interface {
 }
 
 type AddUserSessionStore interface {
-	Add(userId int) (*http.Cookie, error)
+	StartSession(response http.ResponseWriter, userId int) error
 }
 
 type AddUserHandler struct {
 	encoder    AddUserPasswordEncoder
 	repository AddUserRepository
-	sessions   AddUserSessionStore
+	session    AddUserSessionStore
 	renderer   AddUserRenderer
 }
 
 func NewAddUserHandler(
 	encoder AddUserPasswordEncoder,
 	repository AddUserRepository,
-	sessions AddUserSessionStore,
+	session AddUserSessionStore,
 	renderer AddUserRenderer,
 ) *AddUserHandler {
-	return &AddUserHandler{encoder, repository, sessions, renderer}
+	return &AddUserHandler{encoder, repository, session, renderer}
 }
 
 func (handler *AddUserHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
@@ -88,26 +88,25 @@ func (handler *AddUserHandler) ServeHTTP(response http.ResponseWriter, request *
 	}
 
 	newUser, _ = handler.repository.GetUserByName(newUser.Name)
-	cookie, err := handler.sessions.Add(newUser.Id)
+	err = handler.session.StartSession(response, newUser.Id)
 	if err != nil {
 		renderError(err.Error())
 		return
 	}
 
-	http.SetCookie(response, cookie)
 	response.Header().Add("HX-Location", "/todos")
 	response.WriteHeader(http.StatusOK)
 }
 
-type HtmxAddUserRenderer struct {
+type HtmxAddUserView struct {
 	addUserPage *template.Template
 }
 
-func NewHtmxAddUserRenderer(addUserPage *template.Template) *HtmxAddUserRenderer {
-	return &HtmxAddUserRenderer{addUserPage}
+func NewHtmxAddUserView(addUserPage *template.Template) *HtmxAddUserView {
+	return &HtmxAddUserView{addUserPage}
 }
 
-func (renderer *HtmxAddUserRenderer) RenderAddUserForm(name string, password string, errorMessage string) []byte {
+func (renderer *HtmxAddUserView) RenderAddUserForm(name string, password string, errorMessage string) []byte {
 	templateData := RegisterPage{time.Now().UnixMilli(), name, password, errorMessage}
 	buffer := &bytes.Buffer{}
 	err := renderer.addUserPage.ExecuteTemplate(buffer, "form", templateData)
