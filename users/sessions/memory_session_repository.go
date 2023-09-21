@@ -32,16 +32,16 @@ func (repository *MemorySessionRepository) Find(sessionId string) (*Session, err
 	return session, nil
 }
 
-func (repository *MemorySessionRepository) Add(session *Session) error {
+func (repository *MemorySessionRepository) Add(newSession *Session) error {
 	repository.locker.Lock()
 	defer repository.locker.Unlock()
-	for _, s := range repository.sessions {
-		if s.UserId == session.UserId {
-			delete(repository.sessions, session.Id)
+	for _, session := range repository.sessions {
+		if session.UserId == newSession.UserId {
+			delete(repository.sessions, newSession.Id)
 		}
 	}
 
-	repository.sessions[session.Id] = session
+	repository.sessions[newSession.Id] = newSession
 	return nil
 }
 
