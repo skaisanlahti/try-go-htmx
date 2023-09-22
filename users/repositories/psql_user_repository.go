@@ -55,15 +55,17 @@ func (repository *UserRepository) GetUserByName(name string) (domain.User, error
 	return user, nil
 }
 
-const insertUser string = `INSERT INTO "Users" ("Name", "Password") VALUES ($1, $2)`
+const insertUser string = `INSERT INTO "Users" ("Name", "Password") VALUES ($1, $2) RETURNING "Id"`
 
-func (repository *UserRepository) AddUser(user domain.User) error {
-	if _, err := repository.Database.Exec(insertUser, &user.Name, &user.Password); err != nil {
+func (repository *UserRepository) AddUser(user domain.User) (int, error) {
+	var id int
+	err := repository.Database.QueryRow(insertUser, &user.Name, &user.Password).Scan(&id)
+	if err != nil {
 		log.Println(err.Error())
-		return err
+		return 0, err
 	}
 
-	return nil
+	return id, nil
 }
 
 const updateUserPassword string = `Update "Users" Set "Password" = $2 WHERE "Id" = $1`

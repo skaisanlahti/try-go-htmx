@@ -16,7 +16,7 @@ type AddUserPasswordEncoder interface {
 
 type AddUserRepository interface {
 	GetUserByName(name string) (domain.User, error)
-	AddUser(user domain.User) error
+	AddUser(user domain.User) (int, error)
 }
 
 type AddUserRenderer interface {
@@ -51,7 +51,6 @@ func (handler *AddUserHandler) ServeHTTP(response http.ResponseWriter, request *
 		response.Header().Add("Content-type", "text/html; charset=utf-8")
 		response.WriteHeader(http.StatusOK)
 		response.Write(html)
-		return
 	}
 
 	if name == "" {
@@ -61,6 +60,7 @@ func (handler *AddUserHandler) ServeHTTP(response http.ResponseWriter, request *
 
 	if password == "" {
 		renderError("Password is required.")
+		return
 	}
 
 	newUser, err := handler.repository.GetUserByName(name)
@@ -81,14 +81,13 @@ func (handler *AddUserHandler) ServeHTTP(response http.ResponseWriter, request *
 		return
 	}
 
-	err = handler.repository.AddUser(newUser)
+	userId, err := handler.repository.AddUser(newUser)
 	if err != nil {
 		renderError(err.Error())
 		return
 	}
 
-	newUser, _ = handler.repository.GetUserByName(newUser.Name)
-	err = handler.session.StartSession(response, newUser.Id)
+	err = handler.session.StartSession(response, userId)
 	if err != nil {
 		renderError(err.Error())
 		return
