@@ -59,8 +59,8 @@ const insertUser string = `INSERT INTO "Users" ("Name", "Password") VALUES ($1, 
 
 func (repository *UserRepository) AddUser(user domain.User) (int, error) {
 	var id int
-	err := repository.Database.QueryRow(insertUser, &user.Name, &user.Password).Scan(&id)
-	if err != nil {
+	row := repository.Database.QueryRow(insertUser, &user.Name, &user.Password)
+	if err := row.Scan(&id); err != nil {
 		log.Println(err.Error())
 		return 0, err
 	}
@@ -68,7 +68,7 @@ func (repository *UserRepository) AddUser(user domain.User) (int, error) {
 	return id, nil
 }
 
-const updateUserPassword string = `Update "Users" Set "Password" = $2 WHERE "Id" = $1`
+const updateUserPassword string = `UPDATE "Users" SET "Password" = $2 WHERE "Id" = $1`
 
 func (repository *UserRepository) UpdateUserPassword(user domain.User) error {
 	if _, err := repository.Database.Exec(updateUserPassword, &user.Id, &user.Password); err != nil {

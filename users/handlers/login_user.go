@@ -98,8 +98,8 @@ func (handler *LoginUserHandler) ServeHTTP(response http.ResponseWriter, request
 	response.WriteHeader(http.StatusOK)
 }
 
-func (handler *LoginUserHandler) updatePassword(user domain.User, newKeyResult <-chan []byte) {
-	newKey, ok := <-newKeyResult
+func (handler *LoginUserHandler) updatePassword(user domain.User, newKeyChannel <-chan []byte) {
+	newKey, ok := <-newKeyChannel
 	if !ok {
 		log.Printf("User: %s | Key update failed: recalculation failed.", user.Name)
 		return

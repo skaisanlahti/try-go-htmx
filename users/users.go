@@ -16,7 +16,6 @@ func UseUserRoutes(router *http.ServeMux, database *sql.DB, store *sessions.Stor
 	htmlTemplates := templates.ParseTemplates()
 	userRepository := repositories.NewUserRepository(database)
 	passwordEncoder := passwords.NewArgon2Encoder(passwords.DefaultArgon2idOptions)
-	// passwordEncoder := passwords.NewBcryptEncoder(12)
 
 	logoutUser := handlers.NewLogoutUserHandler(store)
 	router.Handle("/users/logout", logging.LogRequest(sessions.RequireSession(logoutUser, store)))

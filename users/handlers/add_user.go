@@ -23,21 +23,21 @@ type AddUserRenderer interface {
 	RenderAddUserForm(name string, password string, errorMessage string) []byte
 }
 
-type AddUserSessionStore interface {
+type AddUserSession interface {
 	StartSession(response http.ResponseWriter, userId int) error
 }
 
 type AddUserHandler struct {
 	encoder    AddUserPasswordEncoder
 	repository AddUserRepository
-	session    AddUserSessionStore
+	session    AddUserSession
 	renderer   AddUserRenderer
 }
 
 func NewAddUserHandler(
 	encoder AddUserPasswordEncoder,
 	repository AddUserRepository,
-	session AddUserSessionStore,
+	session AddUserSession,
 	renderer AddUserRenderer,
 ) *AddUserHandler {
 	return &AddUserHandler{encoder, repository, session, renderer}
