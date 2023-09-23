@@ -15,13 +15,17 @@ import (
 
 func main() {
 	variables := settings.ReadEnvironment(".env.development")
-	database := settings.OpenDatabase(variables.Database)
-	defer database.Close()
+	database := settings.OpenDatabase(settings.DatabaseOptions{
+		Driver:             "pgx",
+		ConnectionString:   variables.Database,
+		MigrationDirectory: "migrations/up",
+		MigrateOnStartup:   settings.IsDevelopment(variables.Mode),
+	})
 
 	router := http.NewServeMux()
 	session := sessions.NewStore(sessions.StoreOptions{
 		CookieName:      "sid",
-		SessionDuration: 60 * time.Second,
+		SessionDuration: 60 * time.Minute,
 		SessionSecret:   sessions.NewSecret(32),
 		SessionStorage:  sessions.NewMemorySessionRepository(),
 		Secure:          settings.IsProduction(variables.Mode),
@@ -30,7 +34,6 @@ func main() {
 	assets.UseAssets(router)
 	users.UseUserRoutes(router, database, session)
 	todos.UseTodoRoutes(router, database, session)
-
 	server := http.Server{
 		Addr:         variables.Address,
 		Handler:      router,
@@ -38,6 +41,7 @@ func main() {
 		WriteTimeout: 5 * time.Second,
 	}
 
+	settings.UseGracefulShutdown(&server, database)
 	log.Printf("Starting a server at %s", variables.Address)
 	log.Panic(server.ListenAndServe())
 }

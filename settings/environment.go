@@ -34,7 +34,6 @@ func ReadEnvironment(filename string) Environment {
 
 	variables := make(map[string]string)
 	lines := strings.Split(string(content), "\n")
-
 	for _, line := range lines {
 		parts := strings.SplitN(line, "=", 2)
 		if len(parts) != 2 {

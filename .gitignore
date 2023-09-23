@@ -4,3 +4,4 @@ dist
 .parcel-cache
 test-go.exe
 db-data
+bin

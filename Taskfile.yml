@@ -1,0 +1,13 @@
+version: "3"
+
+tasks:
+  dev:
+    cmds:
+      - docker-compose up -d
+      - pnpm build
+      - go run . || true
+
+  build:
+    cmds:
+      - pnpm build
+      - go build -o bin/try-go-htmx
