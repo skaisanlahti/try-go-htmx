@@ -5,7 +5,7 @@ HTMX is having a bit of a renaissance right now, so I wanted to give it a try an
 - Using HTMX to create a frontend
 - Using Go standard library to:
   - Run a web server
-  - Use html templates
+  - Use HTML templates
   - Write PostgreSQL queries
 - Writing PostgreSQL migrations manually
 - Building Typescript and SASS assets with Parcel
@@ -15,33 +15,23 @@ HTMX is having a bit of a renaissance right now, so I wanted to give it a try an
 ### Technology
 
 - [Go](https://go.dev/#)
-- [HTMX](https://htmx.org/)
+- [Task](https://taskfile.dev/)
+- [Docker](https://www.docker.com/)
 - [PostgreSQL](https://www.postgresql.org/)
+- [pnpm](https://pnpm.io/installation)
 - [Typescript](https://www.typescriptlang.org/)
+- [HTMX](https://htmx.org/)
 - [SASS](https://sass-lang.com/)
 - [PicoCSS](https://picocss.com/)
 - [Parcel](https://parceljs.org/)
 
 ## Setup
 
-```bash
-# start database container
-docker-compose up -d
-
-# run migrations
-cd migrations
-cat "0_create_migrations.up.sql" | docker exec -i try-go-htmx-db psql -U dbuser -d try-go-htmx-db
-cat "1_create_todos.up.sql" | docker exec -i try-go-htmx-db psql -U dbuser -d try-go-htmx-db
-cat "2_create_users.up.sql" | docker exec -i try-go-htmx-db psql -U dbuser -d try-go-htmx-db
-cd ..
-
-# build frontend assets
-pnpm install
-pnpm build
-
-# run application
-go run .
-```
+- Install [Go](https://go.dev/#) to run and build application
+- Install [pnpm](https://pnpm.io/installation) to build and bundle web assets
+- Install [Task](https://taskfile.dev/) to run project tasks
+- Install [Docker](https://www.docker.com/) to run database container
+- Run `task dev` in project root to build database container and apply migrations, build web assets, and run application
 
 ## What is HTMX?
 
@@ -56,7 +46,7 @@ go run .
 - Much smaller Javascript bundle resulting in lightweight sites (good for mobile)
 - Rendering HTML partials without page refreshes (SPA-like experience)
 - Server-side rendering for better Search engine optimization
-- Can be used with any server side framework that supports rendering html templates as responses
+- Can be used with any server side framework that supports rendering HTML templates as responses
 
 ## Why Go?
 
@@ -77,13 +67,13 @@ go run .
 
 # Points of interest
 
-## Using HTMX in html
+## Using HTMX in HTML
 
-Example in [todos/templates/todo_page.html](https://github.com/skaisanlahti/try-go-htmx/blob/dev/todos/templates/todo_page.html)
+Example in [todos/templates/todo_page.HTML](https://github.com/skaisanlahti/try-go-htmx/blob/dev/todos/templates/todo_page.HTML)
 
 - Split a page into partials using "block" calls which combine "define" and "template" to define a render are in-place
-- Embedded HTMX properties in html elements let us make backend calls without JS
-- Transitions and swapping strategy can also be defined with html properties
+- Embedded HTMX properties in HTML elements let us make backend calls without Javascript
+- Transitions and swapping strategy can also be defined with HTML properties
 
 ## Using HX headers to trigger requests
 
@@ -91,6 +81,9 @@ Example in [todos/handlers/add_todo.go](https://github.com/skaisanlahti/try-go-h
 
 - Trigger additional HTMX requests using headers `response.Header().Add("HX-Trigger", "GetTodoList")`
 
-## Feature focused code organization
+## Using HX-Boost and HX-Location to skip page loads
 
-Vertical slices and feature folders are cool. It's a bit difficult to find the balance between code reuse and feature isolation. In this project I decided to keep each http handler as it's own feature in the htmx folder, but separate repository on it's own, because at least 4 handlers reuse the same database operations. Domain types and functions are also split into their own folder because at least the type is shared by all handlers.
+Example in [users/sessions/require_session.go](https://github.com/skaisanlahti/try-go-htmx/blob/48397ea0fa1c3f49ab3df1e1eaa4e0624665b148/users/sessions/require_session.go#L30) and [users/templates/login_page.HTML](https://github.com/skaisanlahti/try-go-htmx/blob/48397ea0fa1c3f49ab3df1e1eaa4e0624665b148/users/templates/login_page.HTML#L15)
+
+- Add HX-Boost to HTML to use HTMX to load new pages directly to the body tag when clicking links on the page
+- Add HX-Location header to a server response to use HTMX to load the target page directly to the body tag instead of a full page load
