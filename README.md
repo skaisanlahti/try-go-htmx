@@ -27,8 +27,9 @@ HTMX is having a bit of a renaissance right now, so I wanted to give it a try an
 
 ## Setup
 
-- Install [Go](https://go.dev/#) to run and build application
+- Install [Go](https://go.dev/#) to download Go dependencies, run and build application
 - Install [pnpm](https://pnpm.io/installation) to build and bundle web assets
+- Run `pnpm install` to download javascript dependencies
 - Install [Task](https://taskfile.dev/) to run project tasks
 - Install [Docker](https://www.docker.com/) to run database container
 - Run `task dev` in project root to build database container and apply migrations, build web assets, and run application
