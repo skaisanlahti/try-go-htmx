@@ -27,7 +27,6 @@ func UseGracefulShutdown(server *http.Server, database *sql.DB) {
 			log.Printf("Database shutdown error: %v", err)
 		}
 
-		log.Println("Server shutdown gracefully.")
 		os.Exit(0)
 	}()
 
