@@ -36,19 +36,19 @@ func newRequestLogger() func(http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func newSessionGuard(session *todoapp.SessionManager) func(http.HandlerFunc) http.HandlerFunc {
+func newSessionGuard(session *todoapp.SessionManager, redirectUrl string) func(http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(response http.ResponseWriter, request *http.Request) {
 			err := session.VerifySession(response, request)
 			if err != nil {
 				// page redirect
 				if request.Method == http.MethodGet {
-					http.Redirect(response, request, "/htmx/login", http.StatusSeeOther)
+					http.Redirect(response, request, redirectUrl, http.StatusSeeOther)
 					return
 				}
 
 				// htmx redirect
-				response.Header().Add("HX-Location", "/htmx/login")
+				response.Header().Add("HX-Location", redirectUrl)
 				response.WriteHeader(http.StatusOK)
 				return
 			}

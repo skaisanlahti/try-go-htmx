@@ -14,6 +14,20 @@ type SessionAccessor struct {
 	locker   sync.RWMutex
 }
 
+func NewSessionAccessor() *SessionAccessor {
+	accessor := &SessionAccessor{
+		sessions: make(map[string]*todoapp.Session),
+	}
+
+	go removeExpired(accessor)
+	return accessor
+}
+
+const (
+	checkingInterval time.Duration = 60 * time.Second
+	timeFormat       string        = "2006/01/02 15:04:05 -0700"
+)
+
 func removeExpired(accessor *SessionAccessor) {
 	log.Printf("Started a session clean up process at %s.", time.Now().Format(timeFormat))
 	for {
@@ -31,15 +45,6 @@ func removeExpired(accessor *SessionAccessor) {
 		taskDuration := time.Now().Sub(startTask)
 		log.Printf("Expired sessions cleaned up in %d ms.", taskDuration.Milliseconds())
 	}
-}
-
-func NewSessionAccessor() *SessionAccessor {
-	accessor := &SessionAccessor{
-		sessions: make(map[string]*todoapp.Session),
-	}
-
-	go removeExpired(accessor)
-	return accessor
 }
 
 func (accessor *SessionAccessor) FindSession(sessionId string) (*todoapp.Session, error) {
@@ -79,8 +84,3 @@ func (accessor *SessionAccessor) RemoveSession(sessionId string) error {
 	delete(accessor.sessions, sessionId)
 	return nil
 }
-
-const (
-	checkingInterval time.Duration = 60 * time.Second
-	timeFormat       string        = "2006/01/02 15:04:05 -0700"
-)

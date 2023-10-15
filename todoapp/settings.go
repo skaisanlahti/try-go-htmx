@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+	"strings"
 )
 
 type Settings struct {
@@ -49,4 +50,12 @@ func ReadSettings(file string) Settings {
 	}
 
 	return settings
+}
+
+func IsDevelopment(mode string) bool {
+	return strings.ToLower(mode) == "development"
+}
+
+func IsProduction(mode string) bool {
+	return strings.ToLower(mode) == "production"
 }

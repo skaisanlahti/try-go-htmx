@@ -5,9 +5,10 @@ import (
 )
 
 func AddRoutes(router *http.ServeMux, client *Client) {
-	requireSession := newSessionGuard(client.userAuthenticator.SessionManager)
+	requireSession := newSessionGuard(client.UserAuthenticator.SessionManager, "/htmx/login")
 	logRequest := newRequestLogger()
-	addAssets(router)
+
+	AddAssets(router)
 
 	router.HandleFunc("/htmx/users/logout", logRequest(requireSession(client.LogoutUser)))
 	router.HandleFunc("/htmx/users/login", logRequest(client.LoginUser))

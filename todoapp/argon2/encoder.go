@@ -14,13 +14,13 @@ import (
 )
 
 type EncoderOptions struct {
-	Time        uint32
-	Memory      uint32
-	Threads     uint8
-	SaltLength  uint32
-	KeyLength   uint32
-	Recalculate bool
-	Version     uint32
+	Time                uint32
+	Memory              uint32
+	Threads             uint8
+	SaltLength          uint32
+	KeyLength           uint32
+	RecalculateOutdated bool
+	Version             uint32
 }
 
 type Encoder struct {
@@ -57,7 +57,7 @@ func (encoder *Encoder) VerifyKey(encodedKey []byte, candidatePassword string) (
 
 	optionsOutdated := encoder.areOptionsOutdated(options)
 	var newKeyChannel chan []byte
-	if isPasswordCorrect && optionsOutdated && encoder.options.Recalculate {
+	if isPasswordCorrect && optionsOutdated && encoder.options.RecalculateOutdated {
 		newKeyChannel = make(chan []byte)
 		go encoder.recalculateKey(candidatePassword, newKeyChannel)
 	}

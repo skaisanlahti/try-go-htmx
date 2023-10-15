@@ -11,17 +11,17 @@ import (
 )
 
 type Client struct {
-	userAuthenticator *todoapp.UserAuthenticator
-	todoWriter        *todoapp.TodoWriter
-	htmlRenderer      *htmlRenderer
+	UserAuthenticator *todoapp.UserAuthenticator
+	TodoWriter        *todoapp.TodoWriter
+	HtmlRenderer      *HtmlRenderer
 }
 
 func NewClient(ua *todoapp.UserAuthenticator, tw *todoapp.TodoWriter) *Client {
-	return &Client{ua, tw, newHtmlRenderer()}
+	return &Client{ua, tw, NewHtmlRenderer()}
 }
 
 func (client *Client) GetRegisterPage(response http.ResponseWriter, request *http.Request) {
-	html := client.htmlRenderer.RenderRegisterPage()
+	html := client.HtmlRenderer.RenderRegisterPage()
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
 	response.Write(html)
@@ -31,7 +31,7 @@ func (client *Client) RegisterUser(response http.ResponseWriter, request *http.R
 	name := request.FormValue("name")
 	password := request.FormValue("password")
 	renderError := func(message string) {
-		html := client.htmlRenderer.RenderRegisterForm(name, password, message)
+		html := client.HtmlRenderer.RenderRegisterForm(name, password, message)
 		response.Header().Add("Content-type", "text/html; charset=utf-8")
 		response.WriteHeader(http.StatusOK)
 		response.Write(html)
@@ -47,7 +47,7 @@ func (client *Client) RegisterUser(response http.ResponseWriter, request *http.R
 		return
 	}
 
-	err := client.userAuthenticator.RegisterUser(name, password, response)
+	err := client.UserAuthenticator.RegisterUser(name, password, response)
 	if err != nil {
 		renderError("Application error.")
 		return
@@ -58,14 +58,14 @@ func (client *Client) RegisterUser(response http.ResponseWriter, request *http.R
 }
 
 func (client *Client) GetLoginPage(response http.ResponseWriter, request *http.Request) {
-	html := client.htmlRenderer.RenderLoginPage()
+	html := client.HtmlRenderer.RenderLoginPage()
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
 	response.Write(html)
 }
 
 func (client *Client) GetLogoutPage(response http.ResponseWriter, request *http.Request) {
-	html := client.htmlRenderer.RenderLogoutPage()
+	html := client.HtmlRenderer.RenderLogoutPage()
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
 	response.Write(html)
@@ -75,7 +75,7 @@ func (client *Client) LoginUser(response http.ResponseWriter, request *http.Requ
 	name := request.FormValue("name")
 	password := request.FormValue("password")
 	renderError := func(message string) {
-		html := client.htmlRenderer.RenderLoginForm(name, password, message)
+		html := client.HtmlRenderer.RenderLoginForm(name, password, message)
 		response.Header().Add("Content-type", "text/html; charset=utf-8")
 		response.WriteHeader(http.StatusOK)
 		response.Write(html)
@@ -91,7 +91,7 @@ func (client *Client) LoginUser(response http.ResponseWriter, request *http.Requ
 		return
 	}
 
-	err := client.userAuthenticator.LoginUser(name, password, response)
+	err := client.UserAuthenticator.LoginUser(name, password, response)
 	if err != nil {
 		renderError("Invalid credentials.")
 		return
@@ -102,7 +102,7 @@ func (client *Client) LoginUser(response http.ResponseWriter, request *http.Requ
 }
 
 func (client *Client) LogoutUser(response http.ResponseWriter, request *http.Request) {
-	err := client.userAuthenticator.LogoutUser(response, request)
+	err := client.UserAuthenticator.LogoutUser(response, request)
 	if err != nil {
 		response.WriteHeader(http.StatusBadRequest)
 		return
@@ -113,16 +113,16 @@ func (client *Client) LogoutUser(response http.ResponseWriter, request *http.Req
 }
 
 func (client *Client) GetTodoPage(response http.ResponseWriter, request *http.Request) {
-	todos := client.todoWriter.TodoAccessor.FindTodos()
-	html := client.htmlRenderer.RenderTodoPage(todos)
+	todos := client.TodoWriter.TodoAccessor.FindTodos()
+	html := client.HtmlRenderer.RenderTodoPage(todos)
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
 	response.Write(html)
 }
 
 func (client *Client) GetTodoList(response http.ResponseWriter, request *http.Request) {
-	todos := client.todoWriter.TodoAccessor.FindTodos()
-	html := client.htmlRenderer.RenderTodoList(todos)
+	todos := client.TodoWriter.TodoAccessor.FindTodos()
+	html := client.HtmlRenderer.RenderTodoList(todos)
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
 	response.Write(html)
@@ -130,16 +130,16 @@ func (client *Client) GetTodoList(response http.ResponseWriter, request *http.Re
 
 func (client *Client) AddTodo(response http.ResponseWriter, request *http.Request) {
 	task := request.FormValue("task")
-	err := client.todoWriter.AddTodo(task)
+	err := client.TodoWriter.AddTodo(task)
 	if err != nil {
-		html := client.htmlRenderer.RenderTodoForm(task, err.Error())
+		html := client.HtmlRenderer.RenderTodoForm(task, err.Error())
 		response.Header().Add("Content-type", "text/html; charset=utf-8")
 		response.WriteHeader(http.StatusOK)
 		response.Write(html)
 		return
 	}
 
-	html := client.htmlRenderer.RenderTodoForm("", "")
+	html := client.HtmlRenderer.RenderTodoForm("", "")
 	response.Header().Add("HX-Trigger", "GetTodoList")
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
@@ -174,14 +174,14 @@ func (client *Client) ToggleTodo(response http.ResponseWriter, request *http.Req
 		return
 	}
 
-	err = client.todoWriter.ToggleTodo(id)
+	err = client.TodoWriter.ToggleTodo(id)
 	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	todo, _ := client.todoWriter.TodoAccessor.FindTodoById(id)
-	html := client.htmlRenderer.RenderTodoItem(todo)
+	todo, _ := client.TodoWriter.TodoAccessor.FindTodoById(id)
+	html := client.HtmlRenderer.RenderTodoItem(todo)
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
 	response.Write(html)
@@ -194,7 +194,7 @@ func (client *Client) RemoveTodo(response http.ResponseWriter, request *http.Req
 		return
 	}
 
-	err = client.todoWriter.RemoveTodo(id)
+	err = client.TodoWriter.RemoveTodo(id)
 	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		return
