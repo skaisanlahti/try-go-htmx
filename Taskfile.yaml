@@ -4,10 +4,10 @@ tasks:
   dev:
     cmds:
       - docker-compose up -d
-      - pnpm build
-      - go run . || true
+      - cd todoapp/htmx/assets && pnpm build
+      - go run cmd/todoapp/main.go || true
 
   build:
     cmds:
-      - pnpm build
-      - go build -o bin/try-go-htmx
+      - cd todoapp/htmx/assets && pnpm build
+      - go build -o bin/try-go-htmx cmd/todoapp/main.go

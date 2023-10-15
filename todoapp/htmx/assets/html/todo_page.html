@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/x-icon" href="/dist/favicon.ico" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css"
+    />
+    <link rel="stylesheet" href="/dist/css/styles.css" />
+    <title>Go htmx test - Todos</title>
+  </head>
+  <body>
+    <main id="page" class="container" hx-boost="true">
+      <div class="logout">
+        <a href="#" hx-delete="/htmx/users/logout">Logout</a>
+      </div>
+      <h1>Todo list</h1>
+      <!-- .Key as name attribute required to stop firefox from preserving values through page refresh -->
+      {{ block "form" . }}
+      <form
+        id="todo-form"
+        name="{{ .Key }}"
+        hx-post="/htmx/todos/add"
+        hx-target="#todo-form"
+        hx-swap="outerHTML"
+      >
+        <input
+          type="text"
+          name="task"
+          placeholder="Add task..."
+          value="{{ .Task }}"
+        />
+        <p>{{ .Error }}</p>
+        <button type="submit">Add Task</button>
+      </form>
+      {{ end }} {{ block "list" . }}
+      <div
+        class="container"
+        id="todos"
+        hx-get="/htmx/todos/list"
+        hx-trigger="GetTodoList from:body"
+        hx-swap="outerHTML swap:500ms"
+      >
+        {{ range .Todos }} {{ block "item" . }}
+        <div
+          id="item-{{ .Id }}"
+          class="todo_item {{ if .Done }}removable{{ end }}"
+        >
+          <span class="todo_item-task">{{ .Task }}</span>
+          {{ if .Done }}
+          <button
+            role="button"
+            class="todo_item-toggle"
+            hx-patch="/htmx/todos/toggle?id={{ .Id }}"
+            hx-target="#item-{{ .Id }}"
+            hx-swap="outerHTML settle:0ms"
+          >
+            Mark Undone
+          </button>
+          <button
+            role="button"
+            class="secondary"
+            hx-delete="/htmx/todos/remove?id={{ .Id }}"
+            hx-target="#item-{{ .Id }}"
+            hx-swap="outerHTML swap:1000ms"
+          >
+            Remove
+          </button>
+          {{ else }}
+          <button
+            role="button"
+            class="todo_item-toggle outline"
+            hx-patch="/htmx/todos/toggle?id={{ .Id }}"
+            hx-target="#item-{{ .Id }}"
+            hx-swap="outerHTML settle:0ms"
+          >
+            Mark Done
+          </button>
+          <button disabled role="button" class="secondary outline">
+            Remove
+          </button>
+          {{ end }}
+        </div>
+        {{ end }} {{ end }}
+      </div>
+      {{ end }}
+    </main>
+    <script type="module" src="/dist/js/index.js"></script>
+  </body>
+</html>
