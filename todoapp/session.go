@@ -58,14 +58,14 @@ func NewSessionManager(o SessionOptions) *SessionManager {
 	return &SessionManager{o}
 }
 
-func (service *SessionManager) StartSession(response http.ResponseWriter, userId int) error {
-	session := NewSession(userId, service.SessionDuration)
-	err := service.SessionAccessor.AddSession(session)
+func (manager *SessionManager) StartSession(response http.ResponseWriter, userId int) error {
+	session := NewSession(userId, manager.SessionDuration)
+	err := manager.SessionAccessor.AddSession(session)
 	if err != nil {
 		return err
 	}
 
-	cookie, err := service.newSessionCookie(session)
+	cookie, err := manager.newSessionCookie(session)
 	if err != nil {
 		return err
 	}
@@ -74,54 +74,54 @@ func (service *SessionManager) StartSession(response http.ResponseWriter, userId
 	return nil
 }
 
-func (service *SessionManager) StopSession(response http.ResponseWriter, request *http.Request) error {
-	cookie, err := request.Cookie(service.CookieName)
+func (manager *SessionManager) StopSession(response http.ResponseWriter, request *http.Request) error {
+	cookie, err := request.Cookie(manager.CookieName)
 	if err != nil {
 		return err
 	}
 
-	sessionId, err := service.decodeSession(cookie.Value)
+	sessionId, err := manager.decodeSession(cookie.Value)
 	if err != nil {
 		return err
 	}
 
-	err = service.SessionAccessor.RemoveSession(sessionId)
+	err = manager.SessionAccessor.RemoveSession(sessionId)
 	if err != nil {
 		return err
 	}
 
-	http.SetCookie(response, service.newExpiredSessionCookie())
+	http.SetCookie(response, manager.newExpiredSessionCookie())
 	return nil
 }
 
-func (service *SessionManager) VerifySession(response http.ResponseWriter, request *http.Request) error {
-	cookie, err := request.Cookie(service.CookieName)
+func (manager *SessionManager) VerifySession(response http.ResponseWriter, request *http.Request) error {
+	cookie, err := request.Cookie(manager.CookieName)
 	if err != nil {
 		return err
 	}
 
-	sessionId, err := service.decodeSession(cookie.Value)
+	sessionId, err := manager.decodeSession(cookie.Value)
 	if err != nil {
 		return err
 	}
 
-	session, err := service.SessionAccessor.FindSession(sessionId)
+	session, err := manager.SessionAccessor.FindSession(sessionId)
 	if err != nil {
 		return err
 	}
 
 	if session.Expires.Before(time.Now()) {
-		service.SessionAccessor.RemoveSession(session.Id)
+		manager.SessionAccessor.RemoveSession(session.Id)
 		return errors.New("Session has expired.")
 	}
 
-	session.Expires = time.Now().Add(service.SessionDuration)
-	err = service.SessionAccessor.UpdateSession(session)
+	session.Expires = time.Now().Add(manager.SessionDuration)
+	err = manager.SessionAccessor.UpdateSession(session)
 	if err != nil {
 		return err
 	}
 
-	newCookie, err := service.newSessionCookie(session)
+	newCookie, err := manager.newSessionCookie(session)
 	if err != nil {
 		return err
 	}
@@ -130,38 +130,38 @@ func (service *SessionManager) VerifySession(response http.ResponseWriter, reque
 	return nil
 }
 
-func (service *SessionManager) newSessionCookie(session *Session) (*http.Cookie, error) {
-	encodedSession, err := service.encodeSession(session.Id)
+func (manager *SessionManager) newSessionCookie(session *Session) (*http.Cookie, error) {
+	encodedSession, err := manager.encodeSession(session.Id)
 	if err != nil {
 		return nil, err
 	}
 
 	return &http.Cookie{
-		Name:     service.CookieName,
+		Name:     manager.CookieName,
 		Path:     "/",
 		Value:    encodedSession,
-		MaxAge:   int(service.SessionDuration.Seconds()),
+		MaxAge:   int(manager.SessionDuration.Seconds()),
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
-		Secure:   service.Secure,
+		Secure:   manager.Secure,
 	}, nil
 }
 
-func (service *SessionManager) newExpiredSessionCookie() *http.Cookie {
+func (manager *SessionManager) newExpiredSessionCookie() *http.Cookie {
 	return &http.Cookie{
-		Name:     service.CookieName,
+		Name:     manager.CookieName,
 		Path:     "/",
 		Value:    "",
 		MaxAge:   -1,
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
-		Secure:   service.Secure,
+		Secure:   manager.Secure,
 	}
 }
 
-func (service *SessionManager) encodeSession(sessionId string) (string, error) {
-	code := hmac.New(sha256.New, []byte(service.SessionSecret))
-	code.Write([]byte(service.CookieName))
+func (manager *SessionManager) encodeSession(sessionId string) (string, error) {
+	code := hmac.New(sha256.New, []byte(manager.SessionSecret))
+	code.Write([]byte(manager.CookieName))
 	code.Write([]byte(sessionId))
 	signature := code.Sum(nil)
 	signedSession := sessionId + "." + string(signature)
@@ -173,7 +173,7 @@ func (service *SessionManager) encodeSession(sessionId string) (string, error) {
 	return encodedSession, nil
 }
 
-func (service *SessionManager) decodeSession(encodedSession string) (string, error) {
+func (manager *SessionManager) decodeSession(encodedSession string) (string, error) {
 	signedSession, err := base64.URLEncoding.DecodeString(encodedSession)
 	if err != nil {
 		return "", err
@@ -182,8 +182,8 @@ func (service *SessionManager) decodeSession(encodedSession string) (string, err
 	split := strings.SplitN(string(signedSession), ".", 2)
 	sessionId := split[0]
 	signature := split[1]
-	code := hmac.New(sha256.New, []byte(service.SessionSecret))
-	code.Write([]byte(service.CookieName))
+	code := hmac.New(sha256.New, []byte(manager.SessionSecret))
+	code.Write([]byte(manager.CookieName))
 	code.Write([]byte(sessionId))
 	expectedSignature := code.Sum(nil)
 	if !hmac.Equal([]byte(signature), expectedSignature) {
