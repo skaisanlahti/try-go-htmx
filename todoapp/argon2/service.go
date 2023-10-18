@@ -23,17 +23,17 @@ type Options struct {
 	Version             uint32
 }
 
-type Service struct {
+type PasswordService struct {
 	options Options
 }
 
-func CreateService(options Options) *Service {
+func NewPasswordService(options Options) *PasswordService {
 	options.Version = argon2.Version
-	service := &Service{options}
+	service := &PasswordService{options}
 	return service
 }
 
-func (service *Service) CreateKey(password string) ([]byte, error) {
+func (service *PasswordService) NewKey(password string) ([]byte, error) {
 	salt := newSalt(service.options.SaltLength)
 
 	reportProblems := todoapp.MonitorEncodingTime()
@@ -44,7 +44,7 @@ func (service *Service) CreateKey(password string) ([]byte, error) {
 	return encodedKey, nil
 }
 
-func (service *Service) VerifyKey(encodedKey []byte, candidatePassword string) (bool, chan []byte) {
+func (service *PasswordService) VerifyKey(encodedKey []byte, candidatePassword string) (bool, chan []byte) {
 	salt, key, options, err := service.decodeKey(encodedKey)
 	if err != nil {
 		return false, nil
@@ -65,13 +65,13 @@ func (service *Service) VerifyKey(encodedKey []byte, candidatePassword string) (
 	return isPasswordCorrect, newKeyChannel
 }
 
-func (service *Service) recalculateKey(password string, newKeyChannel chan<- []byte) {
+func (service *PasswordService) recalculateKey(password string, newKeyChannel chan<- []byte) {
 	defer close(newKeyChannel)
-	newKey, _ := service.CreateKey(password)
+	newKey, _ := service.NewKey(password)
 	newKeyChannel <- newKey
 }
 
-func (service *Service) encodeKey(salt []byte, key []byte, options Options) []byte {
+func (service *PasswordService) encodeKey(salt []byte, key []byte, options Options) []byte {
 	encodedSalt := base64.RawStdEncoding.EncodeToString(salt)
 	encodedKey := base64.RawStdEncoding.EncodeToString(key)
 	fullEncodedKey := []byte(fmt.Sprintf(
@@ -87,7 +87,7 @@ func (service *Service) encodeKey(salt []byte, key []byte, options Options) []by
 	return fullEncodedKey
 }
 
-func (service *Service) decodeKey(encodedKey []byte) ([]byte, []byte, *Options, error) {
+func (service *PasswordService) decodeKey(encodedKey []byte) ([]byte, []byte, *Options, error) {
 	parts := strings.Split(string(encodedKey), "$")
 	if len(parts) != 6 {
 		return nil, nil, nil, errors.New("Invalid key.")
@@ -124,7 +124,7 @@ func (service *Service) decodeKey(encodedKey []byte) ([]byte, []byte, *Options, 
 	return salt, key, options, nil
 }
 
-func (service *Service) areOptionsOutdated(options *Options) bool {
+func (service *PasswordService) areOptionsOutdated(options *Options) bool {
 	if service.options.Time != options.Time {
 		return true
 	}

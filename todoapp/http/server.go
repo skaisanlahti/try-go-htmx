@@ -17,7 +17,7 @@ type Server struct {
 	database *sql.DB
 }
 
-func CreateServer(address string, database *sql.DB) *Server {
+func NewServer(address string, database *sql.DB) *Server {
 	router := http.NewServeMux()
 	server := &http.Server{
 		Addr:         address,

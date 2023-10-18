@@ -18,7 +18,7 @@ func (proxy *responseRecorder) WriteHeader(code int) {
 	proxy.ResponseWriter.WriteHeader(code)
 }
 
-func createRequestLogger() func(http.HandlerFunc) http.HandlerFunc {
+func newRequestLogger() func(http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(response http.ResponseWriter, request *http.Request) {
 			start := time.Now()
@@ -36,7 +36,7 @@ func createRequestLogger() func(http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func createSessionGuard(sessionService *todoapp.SessionService, redirectUrl string) func(http.HandlerFunc) http.HandlerFunc {
+func newSessionGuard(sessionService *todoapp.SessionService, redirectUrl string) func(http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(response http.ResponseWriter, request *http.Request) {
 			err := sessionService.VerifySession(response, request)

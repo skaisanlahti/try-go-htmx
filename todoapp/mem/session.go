@@ -14,7 +14,7 @@ type SessionStorage struct {
 	locker   sync.RWMutex
 }
 
-func CreateSessionStorage() *SessionStorage {
+func NewSessionStorage() *SessionStorage {
 	storage := &SessionStorage{
 		sessions: make(map[string]*todoapp.Session),
 	}

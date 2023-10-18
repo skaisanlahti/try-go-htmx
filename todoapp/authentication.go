@@ -12,7 +12,7 @@ type User struct {
 	Key  []byte
 }
 
-func CreateUser(name string, key []byte) (User, error) {
+func NewUser(name string, key []byte) (User, error) {
 	nameLength := len([]rune(name))
 	if nameLength < 3 {
 		return User{}, errors.New("User name is too short.")
@@ -25,13 +25,13 @@ func CreateUser(name string, key []byte) (User, error) {
 	return User{Name: name, Key: key}, nil
 }
 
-func createFakeUser(encoder PasswordService) User {
-	fakeKey, err := encoder.CreateKey("Fake password to compare")
+func newFakeUser(encoder PasswordService) User {
+	fakeKey, err := encoder.NewKey("Fake password to compare")
 	if err != nil {
 		log.Panicln("Failed to create fake key for login.")
 	}
 
-	fakeUser, err := CreateUser("FakeName", fakeKey)
+	fakeUser, err := NewUser("FakeName", fakeKey)
 	if err != nil {
 		log.Panicln("Failed to create fake user for login.")
 	}
@@ -54,8 +54,8 @@ type AuthenticationService struct {
 	fakeUser        User
 }
 
-func CreateAuthenticationService(sm *SessionService, pe PasswordService, ua UserStorage) *AuthenticationService {
-	return &AuthenticationService{sm, pe, ua, createFakeUser(pe)}
+func NewAuthenticationService(sm *SessionService, pe PasswordService, ua UserStorage) *AuthenticationService {
+	return &AuthenticationService{sm, pe, ua, newFakeUser(pe)}
 }
 
 func (service *AuthenticationService) RegisterUser(name string, password string, response http.ResponseWriter) error {
@@ -64,12 +64,12 @@ func (service *AuthenticationService) RegisterUser(name string, password string,
 		return err
 	}
 
-	key, err := service.PasswordService.CreateKey(password)
+	key, err := service.PasswordService.NewKey(password)
 	if err != nil {
 		return err
 	}
 
-	user, err = CreateUser(name, key)
+	user, err = NewUser(name, key)
 	if err != nil {
 		return err
 	}

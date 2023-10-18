@@ -16,8 +16,8 @@ type Client struct {
 	HtmlRenderer          *htmlRenderer
 }
 
-func CreateClient(as *todoapp.AuthenticationService, ts *todoapp.TodoService, router *http.ServeMux) {
-	client := &Client{as, ts, createHtmlRenderer()}
+func NewClient(as *todoapp.AuthenticationService, ts *todoapp.TodoService, router *http.ServeMux) {
+	client := &Client{as, ts, newHtmlRenderer()}
 	mapRoutes(router, client)
 }
 

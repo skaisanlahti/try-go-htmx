@@ -6,7 +6,7 @@ import (
 )
 
 type PasswordService interface {
-	CreateKey(password string) ([]byte, error)
+	NewKey(password string) ([]byte, error)
 	VerifyKey(encodedKey []byte, candidatePassword string) (bool, chan []byte)
 }
 

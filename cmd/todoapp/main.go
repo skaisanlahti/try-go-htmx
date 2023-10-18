@@ -22,13 +22,13 @@ func main() {
 		MigrateOnStartup:   settings.Database.MigrateOnStartup,
 	})
 
-	server := http.CreateServer(settings.Address, database)
+	server := http.NewServer(settings.Address, database)
 
 	// services
-	userStorage := psql.CreateUserStorage(database)
-	todoStorage := psql.CreateTodoStorage(database)
-	sessionStorage := mem.CreateSessionStorage()
-	passwordService := argon2.CreateService(argon2.Options{
+	userStorage := psql.NewUserStorage(database)
+	todoStorage := psql.NewTodoStorage(database)
+	sessionStorage := mem.NewSessionStorage()
+	passwordService := argon2.NewPasswordService(argon2.Options{
 		Time:                settings.Password.Time,
 		Memory:              settings.Password.Memory,
 		Threads:             settings.Password.Threads,
@@ -37,19 +37,19 @@ func main() {
 		RecalculateOutdated: settings.Password.RecalculateOutdated,
 	})
 
-	sessionService := todoapp.CreateSessionService(todoapp.SessionOptions{
+	sessionService := todoapp.NewSessionService(todoapp.SessionOptions{
 		Secure:          settings.Session.Secure,
 		CookieName:      settings.Session.CookieName,
-		SessionSecret:   todoapp.CreateSessionSecret(settings.Session.SecretLength),
+		SessionSecret:   todoapp.NewSessionSecret(settings.Session.SecretLength),
 		SessionDuration: time.Duration(settings.Session.SessionDurationMin * float64(time.Minute)),
 		SessionStorage:  sessionStorage,
 	})
 
-	authService := todoapp.CreateAuthenticationService(sessionService, passwordService, userStorage)
-	todoService := todoapp.CreateTodoService(settings, todoStorage)
+	authService := todoapp.NewAuthenticationService(sessionService, passwordService, userStorage)
+	todoService := todoapp.NewTodoService(settings, todoStorage)
 
 	// clients
-	htmx.CreateClient(authService, todoService, server.Router)
+	htmx.NewClient(authService, todoService, server.Router)
 
 	server.Run()
 }

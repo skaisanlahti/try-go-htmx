@@ -8,7 +8,7 @@ type Todo struct {
 	Done bool
 }
 
-func CreateTodo(task string) (Todo, error) {
+func NewTodo(task string) (Todo, error) {
 	length := len([]rune(task))
 	if length == 0 {
 		return Todo{}, errors.New("Task is too short.")
@@ -34,12 +34,12 @@ type TodoService struct {
 	TodoStorage TodoStorage
 }
 
-func CreateTodoService(s Settings, t TodoStorage) *TodoService {
+func NewTodoService(s Settings, t TodoStorage) *TodoService {
 	return &TodoService{s, t}
 }
 
 func (service *TodoService) AddTodo(task string) error {
-	newTodo, err := CreateTodo(task)
+	newTodo, err := NewTodo(task)
 	if err != nil {
 		return err
 	}

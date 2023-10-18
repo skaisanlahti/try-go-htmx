@@ -11,7 +11,7 @@ type UserStorage struct {
 	Database *sql.DB
 }
 
-func CreateUserStorage(db *sql.DB) *UserStorage {
+func NewUserStorage(db *sql.DB) *UserStorage {
 	return &UserStorage{db}
 }
 

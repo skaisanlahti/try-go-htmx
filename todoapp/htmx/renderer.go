@@ -20,7 +20,7 @@ const (
 	assetPath      = "/dist/"
 )
 
-func addAssets(router *http.ServeMux) {
+func mapAssets(router *http.ServeMux) {
 	assetFiles, err := fs.Sub(assetFiles, assetFilesRoot)
 	if err != nil {
 		log.Fatal(err)
@@ -39,7 +39,7 @@ type htmlRenderer struct {
 	todoPage     *template.Template
 }
 
-func createHtmlRenderer() *htmlRenderer {
+func newHtmlRenderer() *htmlRenderer {
 	loginPage := template.Must(template.ParseFS(templateFiles, "assets/html/login_page.html"))
 	logoutPage := template.Must(template.ParseFS(templateFiles, "assets/html/logout_page.html"))
 	registerPage := template.Must(template.ParseFS(templateFiles, "assets/html/register_page.html"))
@@ -76,7 +76,7 @@ func (renderer *htmlRenderer) RenderRegisterForm(name string, password string, e
 	return buffer.Bytes()
 }
 
-type LoginPageData struct {
+type loginPageData struct {
 	Key      int64
 	Name     string
 	Password string
@@ -84,7 +84,7 @@ type LoginPageData struct {
 }
 
 func (renderer *htmlRenderer) RenderLoginPage() []byte {
-	data := LoginPageData{Key: time.Now().UnixMilli()}
+	data := loginPageData{Key: time.Now().UnixMilli()}
 	buffer := &bytes.Buffer{}
 	err := renderer.loginPage.Execute(buffer, data)
 	if err != nil {
@@ -95,7 +95,7 @@ func (renderer *htmlRenderer) RenderLoginPage() []byte {
 }
 
 func (renderer *htmlRenderer) RenderLoginForm(name string, password string, errorMessage string) []byte {
-	data := LoginPageData{Key: time.Now().UnixMilli(), Name: name, Password: password, Error: errorMessage}
+	data := loginPageData{Key: time.Now().UnixMilli(), Name: name, Password: password, Error: errorMessage}
 	buffer := &bytes.Buffer{}
 	err := renderer.loginPage.ExecuteTemplate(buffer, "form", data)
 	if err != nil {

@@ -19,13 +19,13 @@ type Session struct {
 	Expires time.Time
 }
 
-func CreateSession(userId int, duration time.Duration) *Session {
+func NewSession(userId int, duration time.Duration) *Session {
 	sessionId := uuid.New().String()
 	expires := time.Now().Add(duration)
 	return &Session{sessionId, userId, expires}
 }
 
-func CreateSessionSecret(length uint32) string {
+func NewSessionSecret(length uint32) string {
 	bytes := make([]byte, length)
 	_, err := rand.Read(bytes)
 	if err != nil {
@@ -54,23 +54,23 @@ type SessionService struct {
 	SessionOptions
 }
 
-func CreateSessionService(o SessionOptions) *SessionService {
+func NewSessionService(o SessionOptions) *SessionService {
 	return &SessionService{o}
 }
 
 func (service *SessionService) StartSession(response http.ResponseWriter, userId int) error {
-	session := CreateSession(userId, service.SessionDuration)
+	session := NewSession(userId, service.SessionDuration)
 	err := service.SessionStorage.AddSession(session)
 	if err != nil {
 		return err
 	}
 
-	signedSession, err := service.createSignature(session.Id)
+	signedSession, err := service.newSignature(session.Id)
 	if err != nil {
 		return err
 	}
 
-	cookie, err := service.createSessionCookie(signedSession)
+	cookie, err := service.newSessionCookie(signedSession)
 	if err != nil {
 		return err
 	}
@@ -126,12 +126,12 @@ func (service *SessionService) VerifySession(response http.ResponseWriter, reque
 		return err
 	}
 
-	signedSession, err := service.createSignature(session.Id)
+	signedSession, err := service.newSignature(session.Id)
 	if err != nil {
 		return err
 	}
 
-	newCookie, err := service.createSessionCookie(signedSession)
+	newCookie, err := service.newSessionCookie(signedSession)
 	if err != nil {
 		return err
 	}
@@ -140,7 +140,7 @@ func (service *SessionService) VerifySession(response http.ResponseWriter, reque
 	return nil
 }
 
-func (service *SessionService) createSessionCookie(signedSession string) (*http.Cookie, error) {
+func (service *SessionService) newSessionCookie(signedSession string) (*http.Cookie, error) {
 	return &http.Cookie{
 		Name:     service.CookieName,
 		Path:     "/",
@@ -164,7 +164,7 @@ func (service *SessionService) clearSessionCookie() *http.Cookie {
 	}
 }
 
-func (service *SessionService) createSignature(sessionId string) (string, error) {
+func (service *SessionService) newSignature(sessionId string) (string, error) {
 	code := hmac.New(sha256.New, []byte(service.SessionSecret))
 	code.Write([]byte(service.CookieName))
 	code.Write([]byte(sessionId))
