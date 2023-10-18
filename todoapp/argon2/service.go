@@ -13,7 +13,7 @@ import (
 	"golang.org/x/crypto/argon2"
 )
 
-type EncoderOptions struct {
+type Options struct {
 	Time                uint32
 	Memory              uint32
 	Threads             uint8
@@ -23,29 +23,29 @@ type EncoderOptions struct {
 	Version             uint32
 }
 
-type Encoder struct {
-	options EncoderOptions
+type Service struct {
+	options Options
 }
 
-func NewEncoder(options EncoderOptions) *Encoder {
+func CreateService(options Options) *Service {
 	options.Version = argon2.Version
-	encoder := &Encoder{options}
-	return encoder
+	service := &Service{options}
+	return service
 }
 
-func (encoder *Encoder) NewKey(password string) ([]byte, error) {
-	salt := newSalt(encoder.options.SaltLength)
+func (service *Service) CreateKey(password string) ([]byte, error) {
+	salt := newSalt(service.options.SaltLength)
 
 	reportProblems := todoapp.MonitorEncodingTime()
-	key := argon2.IDKey([]byte(password), salt, encoder.options.Time, encoder.options.Memory, encoder.options.Threads, encoder.options.KeyLength)
+	key := argon2.IDKey([]byte(password), salt, service.options.Time, service.options.Memory, service.options.Threads, service.options.KeyLength)
 	reportProblems()
 
-	encodedKey := encoder.encodeKey(salt, key, encoder.options)
+	encodedKey := service.encodeKey(salt, key, service.options)
 	return encodedKey, nil
 }
 
-func (encoder *Encoder) VerifyKey(encodedKey []byte, candidatePassword string) (bool, chan []byte) {
-	salt, key, options, err := encoder.decodeKey(encodedKey)
+func (service *Service) VerifyKey(encodedKey []byte, candidatePassword string) (bool, chan []byte) {
+	salt, key, options, err := service.decodeKey(encodedKey)
 	if err != nil {
 		return false, nil
 	}
@@ -55,23 +55,23 @@ func (encoder *Encoder) VerifyKey(encodedKey []byte, candidatePassword string) (
 	isPasswordCorrect := subtle.ConstantTimeCompare(key, candidateKey) == 1
 	reportProblems()
 
-	optionsOutdated := encoder.areOptionsOutdated(options)
+	optionsOutdated := service.areOptionsOutdated(options)
 	var newKeyChannel chan []byte
-	if isPasswordCorrect && optionsOutdated && encoder.options.RecalculateOutdated {
+	if isPasswordCorrect && optionsOutdated && service.options.RecalculateOutdated {
 		newKeyChannel = make(chan []byte)
-		go encoder.recalculateKey(candidatePassword, newKeyChannel)
+		go service.recalculateKey(candidatePassword, newKeyChannel)
 	}
 
 	return isPasswordCorrect, newKeyChannel
 }
 
-func (encoder *Encoder) recalculateKey(password string, newKeyChannel chan<- []byte) {
+func (service *Service) recalculateKey(password string, newKeyChannel chan<- []byte) {
 	defer close(newKeyChannel)
-	newKey, _ := encoder.NewKey(password)
+	newKey, _ := service.CreateKey(password)
 	newKeyChannel <- newKey
 }
 
-func (encoder *Encoder) encodeKey(salt []byte, key []byte, options EncoderOptions) []byte {
+func (service *Service) encodeKey(salt []byte, key []byte, options Options) []byte {
 	encodedSalt := base64.RawStdEncoding.EncodeToString(salt)
 	encodedKey := base64.RawStdEncoding.EncodeToString(key)
 	fullEncodedKey := []byte(fmt.Sprintf(
@@ -87,7 +87,7 @@ func (encoder *Encoder) encodeKey(salt []byte, key []byte, options EncoderOption
 	return fullEncodedKey
 }
 
-func (encoder *Encoder) decodeKey(encodedKey []byte) ([]byte, []byte, *EncoderOptions, error) {
+func (service *Service) decodeKey(encodedKey []byte) ([]byte, []byte, *Options, error) {
 	parts := strings.Split(string(encodedKey), "$")
 	if len(parts) != 6 {
 		return nil, nil, nil, errors.New("Invalid key.")
@@ -103,7 +103,7 @@ func (encoder *Encoder) decodeKey(encodedKey []byte) ([]byte, []byte, *EncoderOp
 		return nil, nil, nil, errors.New("Incompatible version.")
 	}
 
-	options := &EncoderOptions{}
+	options := &Options{}
 	_, err = fmt.Sscanf(parts[3], "time=%d,memory=%d,threads=%d", &options.Time, &options.Memory, &options.Threads)
 	if err != nil {
 		return nil, nil, nil, err
@@ -124,24 +124,24 @@ func (encoder *Encoder) decodeKey(encodedKey []byte) ([]byte, []byte, *EncoderOp
 	return salt, key, options, nil
 }
 
-func (encoder *Encoder) areOptionsOutdated(options *EncoderOptions) bool {
-	if encoder.options.Time != options.Time {
+func (service *Service) areOptionsOutdated(options *Options) bool {
+	if service.options.Time != options.Time {
 		return true
 	}
 
-	if encoder.options.Memory != options.Memory {
+	if service.options.Memory != options.Memory {
 		return true
 	}
 
-	if encoder.options.Threads != options.Threads {
+	if service.options.Threads != options.Threads {
 		return true
 	}
 
-	if encoder.options.SaltLength != options.SaltLength {
+	if service.options.SaltLength != options.SaltLength {
 		return true
 	}
 
-	if encoder.options.KeyLength != options.KeyLength {
+	if service.options.KeyLength != options.KeyLength {
 		return true
 	}
 

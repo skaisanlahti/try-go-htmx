@@ -13,6 +13,7 @@ import (
 )
 
 func main() {
+	// infrastructure
 	settings := todoapp.ReadSettings("appsettings.json")
 	database := psql.OpenDatabase(psql.DatabaseOptions{
 		Driver:             "pgx",
@@ -21,10 +22,13 @@ func main() {
 		MigrateOnStartup:   settings.Database.MigrateOnStartup,
 	})
 
-	userAccessor := psql.NewUserAccessor(database)
-	todoAccessor := psql.NewTodoAccessor(database)
-	sessionAccessor := mem.NewSessionAccessor()
-	passwordEncoder := argon2.NewEncoder(argon2.EncoderOptions{
+	server := http.CreateServer(settings.Address, database)
+
+	// services
+	userStorage := psql.CreateUserStorage(database)
+	todoStorage := psql.CreateTodoStorage(database)
+	sessionStorage := mem.CreateSessionStorage()
+	passwordService := argon2.CreateService(argon2.Options{
 		Time:                settings.Password.Time,
 		Memory:              settings.Password.Memory,
 		Threads:             settings.Password.Threads,
@@ -33,17 +37,19 @@ func main() {
 		RecalculateOutdated: settings.Password.RecalculateOutdated,
 	})
 
-	sessionManager := todoapp.NewSessionManager(todoapp.SessionOptions{
+	sessionService := todoapp.CreateSessionService(todoapp.SessionOptions{
 		Secure:          settings.Session.Secure,
 		CookieName:      settings.Session.CookieName,
-		SessionSecret:   todoapp.NewSessionSecret(settings.Session.SecretLength),
+		SessionSecret:   todoapp.CreateSessionSecret(settings.Session.SecretLength),
 		SessionDuration: time.Duration(settings.Session.SessionDurationMin * float64(time.Minute)),
-		SessionAccessor: sessionAccessor,
+		SessionStorage:  sessionStorage,
 	})
 
-	userAuthenticator := todoapp.NewUserAuthenticator(settings, sessionManager, passwordEncoder, userAccessor)
-	todoWriter := todoapp.NewTodoWriter(settings, todoAccessor)
-	htmxClient := htmx.NewClient(userAuthenticator, todoWriter)
-	server := http.NewServer(settings.Address, database, htmxClient)
+	authService := todoapp.CreateAuthenticationService(sessionService, passwordService, userStorage)
+	todoService := todoapp.CreateTodoService(settings, todoStorage)
+
+	// clients
+	htmx.CreateClient(authService, todoService, server.Router)
+
 	server.Run()
 }

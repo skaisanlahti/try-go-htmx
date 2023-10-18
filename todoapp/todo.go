@@ -2,31 +2,26 @@ package todoapp
 
 import "errors"
 
-var (
-	ErrTodoTaskTooShort = errors.New("Task is too short.")
-	ErrTodoTaskTooLong  = errors.New("Task is too long.")
-)
-
 type Todo struct {
 	Id   int
 	Task string
 	Done bool
 }
 
-func NewTodo(task string) (Todo, error) {
+func CreateTodo(task string) (Todo, error) {
 	length := len([]rune(task))
 	if length == 0 {
-		return Todo{}, ErrTodoTaskTooShort
+		return Todo{}, errors.New("Task is too short.")
 	}
 
 	if length > 100 {
-		return Todo{}, ErrTodoTaskTooLong
+		return Todo{}, errors.New("Task is too long.")
 	}
 
 	return Todo{Task: task}, nil
 }
 
-type TodoAccessor interface {
+type TodoStorage interface {
 	FindTodos() []Todo
 	FindTodoById(id int) (Todo, error)
 	AddTodo(todo Todo) error
@@ -34,49 +29,49 @@ type TodoAccessor interface {
 	RemoveTodo(id int) error
 }
 
-type TodoWriter struct {
-	Settings     Settings
-	TodoAccessor TodoAccessor
+type TodoService struct {
+	Settings    Settings
+	TodoStorage TodoStorage
 }
 
-func NewTodoWriter(s Settings, t TodoAccessor) *TodoWriter {
-	return &TodoWriter{s, t}
+func CreateTodoService(s Settings, t TodoStorage) *TodoService {
+	return &TodoService{s, t}
 }
 
-func (writer *TodoWriter) AddTodo(task string) error {
-	newTodo, err := NewTodo(task)
+func (service *TodoService) AddTodo(task string) error {
+	newTodo, err := CreateTodo(task)
 	if err != nil {
 		return err
 	}
 
-	if err := writer.TodoAccessor.AddTodo(newTodo); err != nil {
+	if err := service.TodoStorage.AddTodo(newTodo); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (writer *TodoWriter) ToggleTodo(todoId int) error {
-	todo, err := writer.TodoAccessor.FindTodoById(todoId)
+func (service *TodoService) ToggleTodo(todoId int) error {
+	todo, err := service.TodoStorage.FindTodoById(todoId)
 	if err != nil {
 		return err
 	}
 
 	todo.Done = !todo.Done
-	if err := writer.TodoAccessor.UpdateTodo(todo); err != nil {
+	if err := service.TodoStorage.UpdateTodo(todo); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (writer *TodoWriter) RemoveTodo(todoId int) error {
-	_, err := writer.TodoAccessor.FindTodoById(todoId)
+func (service *TodoService) RemoveTodo(todoId int) error {
+	_, err := service.TodoStorage.FindTodoById(todoId)
 	if err != nil {
 		return err
 	}
 
-	if err := writer.TodoAccessor.RemoveTodo(todoId); err != nil {
+	if err := service.TodoStorage.RemoveTodo(todoId); err != nil {
 		return err
 	}
 

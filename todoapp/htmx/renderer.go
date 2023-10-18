@@ -20,7 +20,7 @@ const (
 	assetPath      = "/dist/"
 )
 
-func AddAssets(router *http.ServeMux) {
+func addAssets(router *http.ServeMux) {
 	assetFiles, err := fs.Sub(assetFiles, assetFilesRoot)
 	if err != nil {
 		log.Fatal(err)
@@ -32,32 +32,32 @@ func AddAssets(router *http.ServeMux) {
 //go:embed assets/html/*.html
 var templateFiles embed.FS
 
-type HtmlRenderer struct {
-	LoginPage    *template.Template
-	LogoutPage   *template.Template
-	RegisterPage *template.Template
-	TodoPage     *template.Template
+type htmlRenderer struct {
+	loginPage    *template.Template
+	logoutPage   *template.Template
+	registerPage *template.Template
+	todoPage     *template.Template
 }
 
-func NewHtmlRenderer() *HtmlRenderer {
+func createHtmlRenderer() *htmlRenderer {
 	loginPage := template.Must(template.ParseFS(templateFiles, "assets/html/login_page.html"))
 	logoutPage := template.Must(template.ParseFS(templateFiles, "assets/html/logout_page.html"))
 	registerPage := template.Must(template.ParseFS(templateFiles, "assets/html/register_page.html"))
 	todoPage := template.Must(template.ParseFS(templateFiles, "assets/html/todo_page.html"))
-	return &HtmlRenderer{loginPage, logoutPage, registerPage, todoPage}
+	return &htmlRenderer{loginPage, logoutPage, registerPage, todoPage}
 }
 
-type RegisterPageData struct {
+type registerPageData struct {
 	Key      int64
 	Name     string
 	Password string
 	Error    string
 }
 
-func (renderer *HtmlRenderer) RenderRegisterPage() []byte {
-	data := RegisterPageData{Key: time.Now().UnixMilli()}
+func (renderer *htmlRenderer) RenderRegisterPage() []byte {
+	data := registerPageData{Key: time.Now().UnixMilli()}
 	buffer := &bytes.Buffer{}
-	err := renderer.RegisterPage.Execute(buffer, data)
+	err := renderer.registerPage.Execute(buffer, data)
 	if err != nil {
 		log.Panicln(err.Error())
 	}
@@ -65,10 +65,10 @@ func (renderer *HtmlRenderer) RenderRegisterPage() []byte {
 	return buffer.Bytes()
 }
 
-func (renderer *HtmlRenderer) RenderRegisterForm(name string, password string, errorMessage string) []byte {
-	data := RegisterPageData{Key: time.Now().UnixMilli(), Name: name, Password: password, Error: errorMessage}
+func (renderer *htmlRenderer) RenderRegisterForm(name string, password string, errorMessage string) []byte {
+	data := registerPageData{Key: time.Now().UnixMilli(), Name: name, Password: password, Error: errorMessage}
 	buffer := &bytes.Buffer{}
-	err := renderer.RegisterPage.ExecuteTemplate(buffer, "form", data)
+	err := renderer.registerPage.ExecuteTemplate(buffer, "form", data)
 	if err != nil {
 		log.Panicln(err.Error())
 	}
@@ -83,10 +83,10 @@ type LoginPageData struct {
 	Error    string
 }
 
-func (renderer *HtmlRenderer) RenderLoginPage() []byte {
+func (renderer *htmlRenderer) RenderLoginPage() []byte {
 	data := LoginPageData{Key: time.Now().UnixMilli()}
 	buffer := &bytes.Buffer{}
-	err := renderer.LoginPage.Execute(buffer, data)
+	err := renderer.loginPage.Execute(buffer, data)
 	if err != nil {
 		log.Panicln(err.Error())
 	}
@@ -94,10 +94,10 @@ func (renderer *HtmlRenderer) RenderLoginPage() []byte {
 	return buffer.Bytes()
 }
 
-func (renderer *HtmlRenderer) RenderLoginForm(name string, password string, errorMessage string) []byte {
+func (renderer *htmlRenderer) RenderLoginForm(name string, password string, errorMessage string) []byte {
 	data := LoginPageData{Key: time.Now().UnixMilli(), Name: name, Password: password, Error: errorMessage}
 	buffer := &bytes.Buffer{}
-	err := renderer.LoginPage.ExecuteTemplate(buffer, "form", data)
+	err := renderer.loginPage.ExecuteTemplate(buffer, "form", data)
 	if err != nil {
 		log.Panicln(err.Error())
 	}
@@ -105,9 +105,9 @@ func (renderer *HtmlRenderer) RenderLoginForm(name string, password string, erro
 	return buffer.Bytes()
 }
 
-func (renderer *HtmlRenderer) RenderLogoutPage() []byte {
+func (renderer *htmlRenderer) RenderLogoutPage() []byte {
 	buffer := &bytes.Buffer{}
-	err := renderer.LogoutPage.Execute(buffer, nil)
+	err := renderer.logoutPage.Execute(buffer, nil)
 	if err != nil {
 		log.Panicln(err.Error())
 	}
@@ -122,14 +122,14 @@ type TodoPageData struct {
 	Error string
 }
 
-func (renderer *HtmlRenderer) RenderTodoPage(todos []todoapp.Todo) []byte {
+func (renderer *htmlRenderer) RenderTodoPage(todos []todoapp.Todo) []byte {
 	data := TodoPageData{
 		Key:   time.Now().UnixMilli(),
 		Todos: todos,
 	}
 
 	buffer := &bytes.Buffer{}
-	err := renderer.TodoPage.Execute(buffer, data)
+	err := renderer.todoPage.Execute(buffer, data)
 	if err != nil {
 		log.Panicln(err.Error())
 	}
@@ -137,7 +137,7 @@ func (renderer *HtmlRenderer) RenderTodoPage(todos []todoapp.Todo) []byte {
 	return buffer.Bytes()
 }
 
-func (renderer *HtmlRenderer) RenderTodoForm(task string, errorMessage string) []byte {
+func (renderer *htmlRenderer) RenderTodoForm(task string, errorMessage string) []byte {
 	data := TodoPageData{
 		Key:   time.Now().UnixMilli(),
 		Task:  task,
@@ -145,7 +145,7 @@ func (renderer *HtmlRenderer) RenderTodoForm(task string, errorMessage string) [
 	}
 
 	buffer := &bytes.Buffer{}
-	err := renderer.TodoPage.ExecuteTemplate(buffer, "form", data)
+	err := renderer.todoPage.ExecuteTemplate(buffer, "form", data)
 	if err != nil {
 		log.Panicln(err.Error())
 	}
@@ -153,10 +153,10 @@ func (renderer *HtmlRenderer) RenderTodoForm(task string, errorMessage string) [
 	return buffer.Bytes()
 }
 
-func (renderer *HtmlRenderer) RenderTodoList(todos []todoapp.Todo) []byte {
+func (renderer *htmlRenderer) RenderTodoList(todos []todoapp.Todo) []byte {
 	data := TodoPageData{Todos: todos}
 	buffer := &bytes.Buffer{}
-	err := renderer.TodoPage.ExecuteTemplate(buffer, "list", data)
+	err := renderer.todoPage.ExecuteTemplate(buffer, "list", data)
 	if err != nil {
 		log.Panicln(err.Error())
 	}
@@ -164,9 +164,9 @@ func (renderer *HtmlRenderer) RenderTodoList(todos []todoapp.Todo) []byte {
 	return buffer.Bytes()
 }
 
-func (renderer *HtmlRenderer) RenderTodoItem(todo todoapp.Todo) []byte {
+func (renderer *htmlRenderer) RenderTodoItem(todo todoapp.Todo) []byte {
 	buffer := &bytes.Buffer{}
-	err := renderer.TodoPage.ExecuteTemplate(buffer, "item", todo)
+	err := renderer.todoPage.ExecuteTemplate(buffer, "item", todo)
 	if err != nil {
 		log.Panicln(err.Error())
 	}

@@ -7,18 +7,18 @@ import (
 	"github.com/skaisanlahti/try-go-htmx/todoapp"
 )
 
-type TodoAccessor struct {
+type TodoStorage struct {
 	Database *sql.DB
 }
 
-func NewTodoAccessor(db *sql.DB) *TodoAccessor {
-	return &TodoAccessor{db}
+func CreateTodoStorage(db *sql.DB) *TodoStorage {
+	return &TodoStorage{db}
 }
 
-func (accessor *TodoAccessor) FindTodos() []todoapp.Todo {
+func (storage *TodoStorage) FindTodos() []todoapp.Todo {
 	var todos []todoapp.Todo
 	sql := `SELECT * FROM "Todos" ORDER BY "Task" ASC`
-	rows, err := accessor.Database.Query(sql)
+	rows, err := storage.Database.Query(sql)
 	if err != nil {
 		log.Println(err.Error())
 		return todos
@@ -38,10 +38,10 @@ func (accessor *TodoAccessor) FindTodos() []todoapp.Todo {
 	return todos
 }
 
-func (accessor *TodoAccessor) FindTodoById(id int) (todoapp.Todo, error) {
+func (storage *TodoStorage) FindTodoById(id int) (todoapp.Todo, error) {
 	var todo todoapp.Todo
 	sql := `SELECT * FROM "Todos" WHERE "Id" = $1`
-	row := accessor.Database.QueryRow(sql, id)
+	row := storage.Database.QueryRow(sql, id)
 	if err := row.Scan(&todo.Id, &todo.Task, &todo.Done); err != nil {
 		log.Println(err.Error())
 		return todo, err
@@ -50,9 +50,9 @@ func (accessor *TodoAccessor) FindTodoById(id int) (todoapp.Todo, error) {
 	return todo, nil
 }
 
-func (accessor *TodoAccessor) AddTodo(todo todoapp.Todo) error {
+func (storage *TodoStorage) AddTodo(todo todoapp.Todo) error {
 	sql := `INSERT INTO "Todos" ("Task", "Done") VALUES ($1, $2)`
-	if _, err := accessor.Database.Exec(sql, &todo.Task, &todo.Done); err != nil {
+	if _, err := storage.Database.Exec(sql, &todo.Task, &todo.Done); err != nil {
 		log.Println(err.Error())
 		return err
 	}
@@ -60,9 +60,9 @@ func (accessor *TodoAccessor) AddTodo(todo todoapp.Todo) error {
 	return nil
 }
 
-func (accessor *TodoAccessor) UpdateTodo(todo todoapp.Todo) error {
+func (storage *TodoStorage) UpdateTodo(todo todoapp.Todo) error {
 	sql := `UPDATE "Todos" SET "Task" = $2, "Done" = $3 WHERE "Id" = $1`
-	if _, err := accessor.Database.Exec(sql, &todo.Id, &todo.Task, &todo.Done); err != nil {
+	if _, err := storage.Database.Exec(sql, &todo.Id, &todo.Task, &todo.Done); err != nil {
 		log.Println(err.Error())
 		return err
 	}
@@ -70,9 +70,9 @@ func (accessor *TodoAccessor) UpdateTodo(todo todoapp.Todo) error {
 	return nil
 }
 
-func (accessor *TodoAccessor) RemoveTodo(id int) error {
+func (storage *TodoStorage) RemoveTodo(id int) error {
 	sql := `DELETE FROM "Todos" WHERE "Id" = $1`
-	if _, err := accessor.Database.Exec(sql, id); err != nil {
+	if _, err := storage.Database.Exec(sql, id); err != nil {
 		log.Println(err.Error())
 		return err
 	}

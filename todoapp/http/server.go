@@ -9,18 +9,16 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-
-	"github.com/skaisanlahti/try-go-htmx/todoapp/htmx"
 )
 
 type Server struct {
 	*http.Server
+	Router   *http.ServeMux
 	database *sql.DB
 }
 
-func NewServer(address string, database *sql.DB, htmxClient *htmx.Client) *Server {
+func CreateServer(address string, database *sql.DB) *Server {
 	router := http.NewServeMux()
-	htmx.AddRoutes(router, htmxClient)
 	server := &http.Server{
 		Addr:         address,
 		Handler:      router,
@@ -28,7 +26,7 @@ func NewServer(address string, database *sql.DB, htmxClient *htmx.Client) *Serve
 		WriteTimeout: 10 * time.Second,
 	}
 
-	return &Server{server, database}
+	return &Server{server, router, database}
 }
 
 func (server *Server) Run() {

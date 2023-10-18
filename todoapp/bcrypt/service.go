@@ -8,21 +8,21 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type Encoder struct {
+type Service struct {
 	options todoapp.PasswordSettings
 }
 
-func NewEncoder(options todoapp.PasswordSettings) *Encoder {
-	return &Encoder{options}
+func CreateService(options todoapp.PasswordSettings) *Service {
+	return &Service{options}
 }
 
-func (encoder *Encoder) NewKey(password string) ([]byte, error) {
+func (service *Service) NewKey(password string) ([]byte, error) {
 	if len(password) > 72 {
 		return nil, errors.New("Password is too long.")
 	}
 
 	reportProblems := todoapp.MonitorEncodingTime()
-	key, err := bcrypt.GenerateFromPassword([]byte(password), encoder.options.Cost)
+	key, err := bcrypt.GenerateFromPassword([]byte(password), service.options.Cost)
 	reportProblems()
 	if err != nil {
 		log.Println(err.Error())
@@ -32,34 +32,34 @@ func (encoder *Encoder) NewKey(password string) ([]byte, error) {
 	return key, nil
 }
 
-func (encoder *Encoder) VerifyKey(key []byte, candidatePassword string) (bool, chan []byte) {
+func (service *Service) VerifyKey(key []byte, candidatePassword string) (bool, chan []byte) {
 	reportProblems := todoapp.MonitorEncodingTime()
 	isPasswordCorrect := bcrypt.CompareHashAndPassword(key, []byte(candidatePassword)) == nil
 	reportProblems()
 
-	costOutdated := encoder.isCostOutdated(key)
+	costOutdated := service.isCostOutdated(key)
 	var newKeyChannel chan []byte
-	if isPasswordCorrect && costOutdated && encoder.options.RecalculateOutdated {
+	if isPasswordCorrect && costOutdated && service.options.RecalculateOutdated {
 		newKeyChannel = make(chan []byte)
-		go encoder.recalculateKey(candidatePassword, newKeyChannel)
+		go service.recalculateKey(candidatePassword, newKeyChannel)
 	}
 
 	return isPasswordCorrect, newKeyChannel
 }
 
-func (encoder *Encoder) isCostOutdated(key []byte) bool {
+func (service *Service) isCostOutdated(key []byte) bool {
 	cost, err := bcrypt.Cost(key)
 	if err != nil {
 		log.Println(err.Error())
 		return false
 	}
 
-	return encoder.options.Cost != cost
+	return service.options.Cost != cost
 }
 
-func (encoder *Encoder) recalculateKey(password string, newKeyChannel chan<- []byte) {
+func (service *Service) recalculateKey(password string, newKeyChannel chan<- []byte) {
 	defer close(newKeyChannel)
-	newKey, err := encoder.NewKey(password)
+	newKey, err := service.NewKey(password)
 	if err != nil {
 		return
 	}

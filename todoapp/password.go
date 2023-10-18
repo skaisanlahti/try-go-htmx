@@ -5,8 +5,8 @@ import (
 	"time"
 )
 
-type PasswordEncoder interface {
-	NewKey(password string) ([]byte, error)
+type PasswordService interface {
+	CreateKey(password string) ([]byte, error)
 	VerifyKey(encodedKey []byte, candidatePassword string) (bool, chan []byte)
 }
 

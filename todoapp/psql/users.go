@@ -7,18 +7,18 @@ import (
 	"github.com/skaisanlahti/try-go-htmx/todoapp"
 )
 
-type UserAccessor struct {
+type UserStorage struct {
 	Database *sql.DB
 }
 
-func NewUserAccessor(db *sql.DB) *UserAccessor {
-	return &UserAccessor{db}
+func CreateUserStorage(db *sql.DB) *UserStorage {
+	return &UserStorage{db}
 }
 
-func (accessor *UserAccessor) FindUsers() []todoapp.User {
+func (storage *UserStorage) FindUsers() []todoapp.User {
 	var users []todoapp.User
 	query := `SELECT * FROM "Users"`
-	rows, err := accessor.Database.Query(query)
+	rows, err := storage.Database.Query(query)
 	if err != nil {
 		log.Println(err.Error())
 		return users
@@ -38,10 +38,10 @@ func (accessor *UserAccessor) FindUsers() []todoapp.User {
 	return users
 }
 
-func (accessor *UserAccessor) FindUserByName(name string) (todoapp.User, error) {
+func (storage *UserStorage) FindUserByName(name string) (todoapp.User, error) {
 	var user todoapp.User
 	query := `SELECT * FROM "Users" WHERE "Name" = $1`
-	row := accessor.Database.QueryRow(query, name)
+	row := storage.Database.QueryRow(query, name)
 	if err := row.Scan(&user.Id, &user.Name, &user.Key); err != nil {
 		if err != sql.ErrNoRows {
 			log.Println(err.Error())
@@ -53,10 +53,10 @@ func (accessor *UserAccessor) FindUserByName(name string) (todoapp.User, error) 
 	return user, nil
 }
 
-func (accessor *UserAccessor) AddUser(user todoapp.User) (int, error) {
+func (storage *UserStorage) AddUser(user todoapp.User) (int, error) {
 	var id int
 	query := `INSERT INTO "Users" ("Name", "Password") VALUES ($1, $2) RETURNING "Id"`
-	row := accessor.Database.QueryRow(query, &user.Name, &user.Key)
+	row := storage.Database.QueryRow(query, &user.Name, &user.Key)
 	if err := row.Scan(&id); err != nil {
 		log.Println(err.Error())
 		return 0, err
@@ -65,9 +65,9 @@ func (accessor *UserAccessor) AddUser(user todoapp.User) (int, error) {
 	return id, nil
 }
 
-func (accessor *UserAccessor) UpdateUserKey(user todoapp.User) error {
+func (storage *UserStorage) UpdateUserKey(user todoapp.User) error {
 	query := `UPDATE "Users" SET "Password" = $2 WHERE "Id" = $1`
-	if _, err := accessor.Database.Exec(query, &user.Id, &user.Key); err != nil {
+	if _, err := storage.Database.Exec(query, &user.Id, &user.Key); err != nil {
 		log.Println(err.Error())
 		return err
 	}
@@ -75,9 +75,9 @@ func (accessor *UserAccessor) UpdateUserKey(user todoapp.User) error {
 	return nil
 }
 
-func (accessor *UserAccessor) RemoveUser(id int) error {
+func (storage *UserStorage) RemoveUser(id int) error {
 	query := `DELETE FROM "Users" WHERE "Id" = $1`
-	if _, err := accessor.Database.Exec(query, id); err != nil {
+	if _, err := storage.Database.Exec(query, id); err != nil {
 		log.Println(err.Error())
 		return err
 	}
