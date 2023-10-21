@@ -1,7 +1,4 @@
 node_modules
-public
 dist
 .parcel-cache
-test-go.exe
-db-data
 bin

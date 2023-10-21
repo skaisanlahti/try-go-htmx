@@ -4,6 +4,7 @@ tasks:
   setup:
     cmds:
       - cd internal/web && pnpm install
+      - task build
 
   dev:
     cmds:
@@ -14,4 +15,4 @@ tasks:
   build:
     cmds:
       - cd internal/web && pnpm build
-      - go build -o bin/try-go-htmx cmd/app/main.go
+      - go build -o bin/app cmd/app/main.go
