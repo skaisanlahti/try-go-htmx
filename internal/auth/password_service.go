@@ -1,4 +1,4 @@
-package argon2
+package auth
 
 import (
 	"crypto/rand"
@@ -9,11 +9,10 @@ import (
 	"log"
 	"strings"
 
-	"github.com/skaisanlahti/try-go-htmx/todoapp"
 	"golang.org/x/crypto/argon2"
 )
 
-type Options struct {
+type PasswordOptions struct {
 	Time                uint32
 	Memory              uint32
 	Threads             uint8
@@ -23,38 +22,41 @@ type Options struct {
 	Version             uint32
 }
 
-type PasswordService struct {
-	options Options
+type passwordService struct {
+	options PasswordOptions
 }
 
-func NewPasswordService(options Options) *PasswordService {
+func NewPasswordService(options PasswordOptions) *passwordService {
 	options.Version = argon2.Version
-	service := &PasswordService{options}
+	service := &passwordService{options}
 	return service
 }
 
-func (service *PasswordService) NewKey(password string) ([]byte, error) {
+func newSalt(length uint32) []byte {
+	bytes := make([]byte, length)
+	_, err := rand.Read(bytes)
+	if err != nil {
+		log.Panicln(err)
+	}
+
+	return bytes
+}
+
+func (service *passwordService) newKey(password string) ([]byte, error) {
 	salt := newSalt(service.options.SaltLength)
-
-	reportProblems := todoapp.MonitorEncodingTime()
 	key := argon2.IDKey([]byte(password), salt, service.options.Time, service.options.Memory, service.options.Threads, service.options.KeyLength)
-	reportProblems()
-
 	encodedKey := service.encodeKey(salt, key, service.options)
 	return encodedKey, nil
 }
 
-func (service *PasswordService) VerifyKey(encodedKey []byte, candidatePassword string) (bool, chan []byte) {
+func (service *passwordService) verifyKey(encodedKey []byte, candidatePassword string) (bool, chan []byte) {
 	salt, key, options, err := service.decodeKey(encodedKey)
 	if err != nil {
 		return false, nil
 	}
 
-	reportProblems := todoapp.MonitorEncodingTime()
 	candidateKey := argon2.IDKey([]byte(candidatePassword), salt, options.Time, options.Memory, options.Threads, options.KeyLength)
 	isPasswordCorrect := subtle.ConstantTimeCompare(key, candidateKey) == 1
-	reportProblems()
-
 	optionsOutdated := service.areOptionsOutdated(options)
 	var newKeyChannel chan []byte
 	if isPasswordCorrect && optionsOutdated && service.options.RecalculateOutdated {
@@ -65,13 +67,13 @@ func (service *PasswordService) VerifyKey(encodedKey []byte, candidatePassword s
 	return isPasswordCorrect, newKeyChannel
 }
 
-func (service *PasswordService) recalculateKey(password string, newKeyChannel chan<- []byte) {
+func (service *passwordService) recalculateKey(password string, newKeyChannel chan<- []byte) {
 	defer close(newKeyChannel)
-	newKey, _ := service.NewKey(password)
+	newKey, _ := service.newKey(password)
 	newKeyChannel <- newKey
 }
 
-func (service *PasswordService) encodeKey(salt []byte, key []byte, options Options) []byte {
+func (service *passwordService) encodeKey(salt []byte, key []byte, options PasswordOptions) []byte {
 	encodedSalt := base64.RawStdEncoding.EncodeToString(salt)
 	encodedKey := base64.RawStdEncoding.EncodeToString(key)
 	fullEncodedKey := []byte(fmt.Sprintf(
@@ -87,7 +89,7 @@ func (service *PasswordService) encodeKey(salt []byte, key []byte, options Optio
 	return fullEncodedKey
 }
 
-func (service *PasswordService) decodeKey(encodedKey []byte) ([]byte, []byte, *Options, error) {
+func (service *passwordService) decodeKey(encodedKey []byte) ([]byte, []byte, *PasswordOptions, error) {
 	parts := strings.Split(string(encodedKey), "$")
 	if len(parts) != 6 {
 		return nil, nil, nil, errors.New("Invalid key.")
@@ -103,7 +105,7 @@ func (service *PasswordService) decodeKey(encodedKey []byte) ([]byte, []byte, *O
 		return nil, nil, nil, errors.New("Incompatible version.")
 	}
 
-	options := &Options{}
+	options := &PasswordOptions{}
 	_, err = fmt.Sscanf(parts[3], "time=%d,memory=%d,threads=%d", &options.Time, &options.Memory, &options.Threads)
 	if err != nil {
 		return nil, nil, nil, err
@@ -124,7 +126,7 @@ func (service *PasswordService) decodeKey(encodedKey []byte) ([]byte, []byte, *O
 	return salt, key, options, nil
 }
 
-func (service *PasswordService) areOptionsOutdated(options *Options) bool {
+func (service *passwordService) areOptionsOutdated(options *PasswordOptions) bool {
 	if service.options.Time != options.Time {
 		return true
 	}
@@ -146,14 +148,4 @@ func (service *PasswordService) areOptionsOutdated(options *Options) bool {
 	}
 
 	return false
-}
-
-func newSalt(length uint32) []byte {
-	bytes := make([]byte, length)
-	_, err := rand.Read(bytes)
-	if err != nil {
-		log.Panicln(err)
-	}
-
-	return bytes
 }

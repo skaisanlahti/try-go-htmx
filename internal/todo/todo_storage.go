@@ -1,24 +1,22 @@
-package psql
+package todo
 
 import (
 	"database/sql"
 	"log"
-
-	"github.com/skaisanlahti/try-go-htmx/todoapp"
 )
 
-type TodoStorage struct {
-	Database *sql.DB
+type todoStorage struct {
+	database *sql.DB
 }
 
-func NewTodoStorage(db *sql.DB) *TodoStorage {
-	return &TodoStorage{db}
+func NewTodoStorage(db *sql.DB) *todoStorage {
+	return &todoStorage{db}
 }
 
-func (storage *TodoStorage) FindTodos() []todoapp.Todo {
-	var todos []todoapp.Todo
+func (storage *todoStorage) findTodos() []todo {
+	var todos []todo
 	query := `SELECT * FROM "Todos" ORDER BY "Task" ASC`
-	rows, err := storage.Database.Query(query)
+	rows, err := storage.database.Query(query)
 	if err != nil {
 		log.Println(err.Error())
 		return todos
@@ -26,7 +24,7 @@ func (storage *TodoStorage) FindTodos() []todoapp.Todo {
 
 	defer rows.Close()
 	for rows.Next() {
-		var todo todoapp.Todo
+		var todo todo
 		if err := rows.Scan(&todo.Id, &todo.Task, &todo.Done); err != nil {
 			log.Println(err.Error())
 			return todos
@@ -38,10 +36,10 @@ func (storage *TodoStorage) FindTodos() []todoapp.Todo {
 	return todos
 }
 
-func (storage *TodoStorage) FindTodoById(id int) (todoapp.Todo, error) {
-	var todo todoapp.Todo
+func (storage *todoStorage) findTodoById(id int) (todo, error) {
+	var todo todo
 	query := `SELECT * FROM "Todos" WHERE "Id" = $1`
-	row := storage.Database.QueryRow(query, id)
+	row := storage.database.QueryRow(query, id)
 	if err := row.Scan(&todo.Id, &todo.Task, &todo.Done); err != nil {
 		log.Println(err.Error())
 		return todo, err
@@ -50,9 +48,9 @@ func (storage *TodoStorage) FindTodoById(id int) (todoapp.Todo, error) {
 	return todo, nil
 }
 
-func (storage *TodoStorage) AddTodo(todo todoapp.Todo) error {
+func (storage *todoStorage) addTodo(todo todo) error {
 	query := `INSERT INTO "Todos" ("Task", "Done") VALUES ($1, $2)`
-	if _, err := storage.Database.Exec(query, &todo.Task, &todo.Done); err != nil {
+	if _, err := storage.database.Exec(query, &todo.Task, &todo.Done); err != nil {
 		log.Println(err.Error())
 		return err
 	}
@@ -60,9 +58,9 @@ func (storage *TodoStorage) AddTodo(todo todoapp.Todo) error {
 	return nil
 }
 
-func (storage *TodoStorage) UpdateTodo(todo todoapp.Todo) error {
+func (storage *todoStorage) updateTodo(todo todo) error {
 	query := `UPDATE "Todos" SET "Task" = $2, "Done" = $3 WHERE "Id" = $1`
-	if _, err := storage.Database.Exec(query, &todo.Id, &todo.Task, &todo.Done); err != nil {
+	if _, err := storage.database.Exec(query, &todo.Id, &todo.Task, &todo.Done); err != nil {
 		log.Println(err.Error())
 		return err
 	}
@@ -70,9 +68,9 @@ func (storage *TodoStorage) UpdateTodo(todo todoapp.Todo) error {
 	return nil
 }
 
-func (storage *TodoStorage) RemoveTodo(id int) error {
+func (storage *todoStorage) removeTodo(id int) error {
 	query := `DELETE FROM "Todos" WHERE "Id" = $1`
-	if _, err := storage.Database.Exec(query, id); err != nil {
+	if _, err := storage.database.Exec(query, id); err != nil {
 		log.Println(err.Error())
 		return err
 	}

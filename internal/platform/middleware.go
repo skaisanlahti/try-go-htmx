@@ -1,24 +1,34 @@
-package htmx
+package platform
 
 import (
 	"log"
 	"net/http"
 	"time"
-
-	"github.com/skaisanlahti/try-go-htmx/todoapp"
 )
+
+type sessionVerifier interface {
+	VerifySession(http.ResponseWriter, *http.Request) error
+}
+
+type middlewareFactory struct {
+	sessionVerifier sessionVerifier
+}
+
+func NewMiddlewareFactory(sessionVerifier sessionVerifier) *middlewareFactory {
+	return &middlewareFactory{sessionVerifier}
+}
 
 type responseRecorder struct {
 	http.ResponseWriter
 	statusCode int
 }
 
-func (proxy *responseRecorder) WriteHeader(code int) {
-	proxy.statusCode = code
-	proxy.ResponseWriter.WriteHeader(code)
+func (recorder *responseRecorder) WriteHeader(code int) {
+	recorder.statusCode = code
+	recorder.ResponseWriter.WriteHeader(code)
 }
 
-func newRequestLogger() func(http.HandlerFunc) http.HandlerFunc {
+func (middleware *middlewareFactory) NewLogger() func(http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(response http.ResponseWriter, request *http.Request) {
 			start := time.Now()
@@ -36,10 +46,10 @@ func newRequestLogger() func(http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func newSessionGuard(sessionService *todoapp.SessionService, redirectUrl string) func(http.HandlerFunc) http.HandlerFunc {
+func (middleware *middlewareFactory) NewSessionGuard(redirectUrl string) func(http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(response http.ResponseWriter, request *http.Request) {
-			err := sessionService.VerifySession(response, request)
+			err := middleware.sessionVerifier.VerifySession(response, request)
 			if err != nil {
 				// page redirect
 				if request.Method == http.MethodGet {

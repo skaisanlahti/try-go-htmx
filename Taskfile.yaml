@@ -1,13 +1,17 @@
 version: "3"
 
 tasks:
+  setup:
+    cmds:
+      - cd internal/web && pnpm install
+
   dev:
     cmds:
       - docker-compose up -d
-      - cd todoapp/htmx/assets && pnpm build
-      - go run cmd/todoapp/main.go || true
+      - cd internal/web && pnpm build
+      - go run cmd/app/main.go || true
 
   build:
     cmds:
-      - cd todoapp/htmx/assets && pnpm build
-      - go build -o bin/try-go-htmx cmd/todoapp/main.go
+      - cd internal/web && pnpm build
+      - go build -o bin/try-go-htmx cmd/app/main.go

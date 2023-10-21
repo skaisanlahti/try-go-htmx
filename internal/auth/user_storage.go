@@ -1,22 +1,20 @@
-package psql
+package auth
 
 import (
 	"database/sql"
 	"log"
-
-	"github.com/skaisanlahti/try-go-htmx/todoapp"
 )
 
-type UserStorage struct {
+type userStorage struct {
 	Database *sql.DB
 }
 
-func NewUserStorage(db *sql.DB) *UserStorage {
-	return &UserStorage{db}
+func NewUserStorage(db *sql.DB) *userStorage {
+	return &userStorage{db}
 }
 
-func (storage *UserStorage) FindUsers() []todoapp.User {
-	var users []todoapp.User
+func (storage *userStorage) findUsers() []user {
+	var users []user
 	query := `SELECT * FROM "Users"`
 	rows, err := storage.Database.Query(query)
 	if err != nil {
@@ -26,7 +24,7 @@ func (storage *UserStorage) FindUsers() []todoapp.User {
 
 	defer rows.Close()
 	for rows.Next() {
-		var user todoapp.User
+		var user user
 		if err := rows.Scan(&user.Id, &user.Name, &user.Key); err != nil {
 			log.Println(err.Error())
 			return users
@@ -38,8 +36,8 @@ func (storage *UserStorage) FindUsers() []todoapp.User {
 	return users
 }
 
-func (storage *UserStorage) FindUserByName(name string) (todoapp.User, error) {
-	var user todoapp.User
+func (storage *userStorage) findUserByName(name string) (user, error) {
+	var user user
 	query := `SELECT * FROM "Users" WHERE "Name" = $1`
 	row := storage.Database.QueryRow(query, name)
 	if err := row.Scan(&user.Id, &user.Name, &user.Key); err != nil {
@@ -53,7 +51,7 @@ func (storage *UserStorage) FindUserByName(name string) (todoapp.User, error) {
 	return user, nil
 }
 
-func (storage *UserStorage) AddUser(user todoapp.User) (int, error) {
+func (storage *userStorage) addUser(user user) (int, error) {
 	var id int
 	query := `INSERT INTO "Users" ("Name", "Password") VALUES ($1, $2) RETURNING "Id"`
 	row := storage.Database.QueryRow(query, &user.Name, &user.Key)
@@ -65,7 +63,7 @@ func (storage *UserStorage) AddUser(user todoapp.User) (int, error) {
 	return id, nil
 }
 
-func (storage *UserStorage) UpdateUserKey(user todoapp.User) error {
+func (storage *userStorage) updateUserKey(user user) error {
 	query := `UPDATE "Users" SET "Password" = $2 WHERE "Id" = $1`
 	if _, err := storage.Database.Exec(query, &user.Id, &user.Key); err != nil {
 		log.Println(err.Error())
@@ -75,7 +73,7 @@ func (storage *UserStorage) UpdateUserKey(user todoapp.User) error {
 	return nil
 }
 
-func (storage *UserStorage) RemoveUser(id int) error {
+func (storage *userStorage) removeUser(id int) error {
 	query := `DELETE FROM "Users" WHERE "Id" = $1`
 	if _, err := storage.Database.Exec(query, id); err != nil {
 		log.Println(err.Error())

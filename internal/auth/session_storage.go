@@ -1,40 +1,38 @@
-package mem
+package auth
 
 import (
 	"errors"
 	"log"
 	"sync"
 	"time"
-
-	"github.com/skaisanlahti/try-go-htmx/todoapp"
 )
 
-type SessionStorage struct {
-	sessions map[string]*todoapp.Session
+type sessionStorage struct {
+	sessions map[string]session
 	locker   sync.RWMutex
 }
 
-func NewSessionStorage() *SessionStorage {
-	storage := &SessionStorage{
-		sessions: make(map[string]*todoapp.Session),
+func NewSessionStorage() *sessionStorage {
+	storage := &sessionStorage{
+		sessions: make(map[string]session),
 	}
 
 	go storage.removeExpired()
 	return storage
 }
 
-func (storage *SessionStorage) FindSession(sessionId string) (*todoapp.Session, error) {
+func (storage *sessionStorage) findSession(sessionId string) (session, error) {
 	storage.locker.RLock()
 	defer storage.locker.RUnlock()
 	session, ok := storage.sessions[sessionId]
 	if !ok {
-		return nil, errors.New("Session not found.")
+		return session, errors.New("Session not found.")
 	}
 
 	return session, nil
 }
 
-func (storage *SessionStorage) AddSession(newSession *todoapp.Session) error {
+func (storage *sessionStorage) addSession(newSession session) error {
 	storage.locker.Lock()
 	defer storage.locker.Unlock()
 	for _, session := range storage.sessions {
@@ -47,14 +45,14 @@ func (storage *SessionStorage) AddSession(newSession *todoapp.Session) error {
 	return nil
 }
 
-func (storage *SessionStorage) UpdateSession(session *todoapp.Session) error {
+func (storage *sessionStorage) updateSession(session session) error {
 	storage.locker.Lock()
 	defer storage.locker.Unlock()
 	storage.sessions[session.Id] = session
 	return nil
 }
 
-func (storage *SessionStorage) RemoveSession(sessionId string) error {
+func (storage *sessionStorage) removeSession(sessionId string) error {
 	storage.locker.Lock()
 	defer storage.locker.Unlock()
 	delete(storage.sessions, sessionId)
@@ -66,7 +64,7 @@ const (
 	timeFormat       string        = "2006/01/02 15:04:05 -0700"
 )
 
-func (storage *SessionStorage) removeExpired() {
+func (storage *sessionStorage) removeExpired() {
 	log.Printf("Started a session clean up process at %s.", time.Now().Format(timeFormat))
 	for {
 		log.Printf("Next expired session clean up scheduled at %s.", time.Now().Add(checkingInterval).Format(timeFormat))

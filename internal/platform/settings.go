@@ -1,4 +1,4 @@
-package todoapp
+package platform
 
 import (
 	"encoding/json"
@@ -7,21 +7,21 @@ import (
 	"strings"
 )
 
-type Settings struct {
+type settings struct {
 	Mode     string           `json:"mode"`
 	Address  string           `json:"address"`
-	Database DatabaseSettings `json:"database"`
-	Password PasswordSettings `json:"password"`
-	Session  SessionSettings  `json:"session"`
+	Database databaseSettings `json:"database"`
+	Password passwordSettings `json:"password"`
+	Session  sessionSettings  `json:"session"`
 }
 
-type DatabaseSettings struct {
+type databaseSettings struct {
 	ConnectionString   string `json:"connectionString"`
 	MigrationDirectory string `json:"migrationDirectory"`
 	MigrateOnStartup   bool   `json:"migrateOnStartup"`
 }
 
-type PasswordSettings struct {
+type passwordSettings struct {
 	Cost                int    `json:"cost"`
 	Time                uint32 `json:"time"`
 	Memory              uint32 `json:"memory"`
@@ -31,20 +31,20 @@ type PasswordSettings struct {
 	RecalculateOutdated bool   `json:"recalculateOutdated"`
 }
 
-type SessionSettings struct {
+type sessionSettings struct {
 	Secure             bool    `json:"secure"`
 	CookieName         string  `json:"cookieName"`
 	SecretLength       uint32  `json:"secretLength"`
 	SessionDurationMin float64 `json:"sessionDurationMin"`
 }
 
-func ReadSettings(file string) Settings {
+func ReadSettings(file string) settings {
 	bytes, err := os.ReadFile(file)
 	if err != nil {
 		log.Panic(err.Error())
 	}
 
-	var settings Settings
+	var settings settings
 	if err := json.Unmarshal(bytes, &settings); err != nil {
 		log.Panic(err.Error())
 	}
