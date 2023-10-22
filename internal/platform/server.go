@@ -30,29 +30,34 @@ func NewServer(address string, database *sql.DB) *server {
 }
 
 func (server *server) Run() {
-	log.Printf("Server listening to %s", server.Addr)
-	server.listenForInterrupt()
-	log.Panic(server.ListenAndServe())
+	exit := make(chan struct{})
+	go server.shutdown(exit)
+	err := server.ListenAndServe()
+	if err != http.ErrServerClosed {
+		log.Fatalf("HTTP server ListenAndServe: %v", err)
+	}
+	<-exit
 }
 
-func (server *server) listenForInterrupt() {
-	interruptSignal := make(chan os.Signal, 1)
-	signal.Notify(interruptSignal, syscall.SIGINT, syscall.SIGTERM)
-	go server.shutdown(interruptSignal)
-}
+func (server *server) shutdown(exit chan struct{}) {
+	interrupt := make(chan os.Signal, 1)
+	signal.Notify(interrupt, os.Interrupt, os.Kill, syscall.SIGTERM, syscall.SIGINT)
+	<-interrupt
 
-func (server *server) shutdown(interruptSignal <-chan os.Signal) {
-	<-interruptSignal
-	log.Println("Received an interrupt signal, shutting down...")
-	err := server.Shutdown(context.Background())
+	context, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	err := server.Shutdown(context)
 	if err != nil {
-		log.Printf("Server shutdown error: %v", err)
+		log.Printf("HTTP server Shutdown: %v", err)
 	}
 
+	log.Println("Server closed.")
 	err = server.database.Close()
 	if err != nil {
-		log.Printf("Database shutdown error: %v", err)
+		log.Fatalf("Database shutdown error: %v", err)
 	}
 
-	os.Exit(0)
+	log.Println("Database closed.")
+	log.Println("Shutdown finished.")
+	close(exit)
 }

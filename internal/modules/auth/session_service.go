@@ -78,6 +78,25 @@ func (service *sessionService) VerifySession(response http.ResponseWriter, reque
 	return nil
 }
 
+func (service *sessionService) sessionExists(request *http.Request) bool {
+	cookie, err := request.Cookie(service.options.cookieName)
+	if err != nil {
+		return false
+	}
+
+	sessionId, err := service.verifySignature(cookie.Value)
+	if err != nil {
+		return false
+	}
+
+	_, err = service.sessionStorage.findSession(sessionId)
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
 func (service *sessionService) startSession(response http.ResponseWriter, userId int) error {
 	session := newSession(userId, service.options.duration)
 	err := service.sessionStorage.addSession(session)

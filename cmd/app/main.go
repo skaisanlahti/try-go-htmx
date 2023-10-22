@@ -17,7 +17,6 @@ func main() {
 	})
 
 	server := platform.NewServer(settings.Address, database)
-
 	authModule := auth.NewModule(settings.Password, settings.Session, database)
 	todoModule := todo.NewModule(database)
 	middleware := platform.NewMiddlewareFactory(authModule)

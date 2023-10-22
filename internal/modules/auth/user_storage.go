@@ -36,6 +36,22 @@ func (storage *userStorage) findUsers() []user {
 	return users
 }
 
+func (storage *userStorage) userExists(name string) bool {
+	var exists bool
+	query := `SELECT EXISTS(SELECT 1 FROM "Users" WHERE "Name" = $1 )`
+	row := storage.database.QueryRow(query, name)
+	err := row.Scan(&exists)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			log.Println(err.Error())
+		}
+
+		return false
+	}
+
+	return exists
+}
+
 func (storage *userStorage) findUserByName(name string) (user, error) {
 	var user user
 	query := `SELECT * FROM "Users" WHERE "Name" = $1`

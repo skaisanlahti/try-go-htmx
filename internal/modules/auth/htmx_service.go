@@ -14,6 +14,12 @@ func newHtmxService(service *authenticationService, renderer *htmxRenderer) *htm
 }
 
 func (service *htmxService) getRegisterPage(response http.ResponseWriter, request *http.Request) {
+	isLoggedIn := service.authenticationService.sessionService.sessionExists(request)
+	if isLoggedIn {
+		http.Redirect(response, request, "htmx/todos", http.StatusSeeOther)
+		return
+	}
+
 	html := service.htmxRenderer.renderRegisterPage()
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
@@ -21,6 +27,12 @@ func (service *htmxService) getRegisterPage(response http.ResponseWriter, reques
 }
 
 func (service *htmxService) registerUser(response http.ResponseWriter, request *http.Request) {
+	isLoggedIn := service.authenticationService.sessionService.sessionExists(request)
+	if isLoggedIn {
+		response.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	name := request.FormValue("name")
 	password := request.FormValue("password")
 	renderError := func(message string) {
@@ -41,8 +53,13 @@ func (service *htmxService) registerUser(response http.ResponseWriter, request *
 	}
 
 	err := service.authenticationService.registerUser(name, password, response)
+	if err == ErrUserAlreadyExists {
+		renderError(err.Error())
+		return
+	}
+
 	if err != nil {
-		renderError("Application error.")
+		renderError("Something went wrong.")
 		return
 	}
 
@@ -51,20 +68,25 @@ func (service *htmxService) registerUser(response http.ResponseWriter, request *
 }
 
 func (service *htmxService) getLoginPage(response http.ResponseWriter, request *http.Request) {
+	isLoggedIn := service.authenticationService.sessionService.sessionExists(request)
+	if isLoggedIn {
+		http.Redirect(response, request, "htmx/todos", http.StatusSeeOther)
+		return
+	}
+
 	html := service.htmxRenderer.renderLoginPage()
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
 	response.Write(html)
 }
 
-func (service *htmxService) getLogoutPage(response http.ResponseWriter, request *http.Request) {
-	html := service.htmxRenderer.renderLogoutPage()
-	response.Header().Add("Content-type", "text/html; charset=utf-8")
-	response.WriteHeader(http.StatusOK)
-	response.Write(html)
-}
-
 func (service *htmxService) loginUser(response http.ResponseWriter, request *http.Request) {
+	isLoggedIn := service.authenticationService.sessionService.sessionExists(request)
+	if isLoggedIn {
+		response.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	name := request.FormValue("name")
 	password := request.FormValue("password")
 	renderError := func(message string) {
@@ -92,6 +114,14 @@ func (service *htmxService) loginUser(response http.ResponseWriter, request *htt
 
 	response.Header().Add("HX-Location", "/htmx/todos")
 	response.WriteHeader(http.StatusOK)
+}
+
+func (service *htmxService) getLogoutPage(response http.ResponseWriter, request *http.Request) {
+	loggedIn := service.authenticationService.sessionService.sessionExists(request)
+	html := service.htmxRenderer.renderLogoutPage(loggedIn)
+	response.Header().Add("Content-type", "text/html; charset=utf-8")
+	response.WriteHeader(http.StatusOK)
+	response.Write(html)
 }
 
 func (service *htmxService) logoutUser(response http.ResponseWriter, request *http.Request) {

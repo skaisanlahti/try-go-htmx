@@ -12,7 +12,7 @@ type sessionVerifier interface {
 
 type MiddlewareFactory interface {
 	NewLogger() func(http.HandlerFunc) http.HandlerFunc
-	NewSessionGuard(redirectUrl string) func(http.HandlerFunc) http.HandlerFunc
+	NewPrivateGuard(redirectUrl string) func(http.HandlerFunc) http.HandlerFunc
 }
 
 type middlewareFactory struct {
@@ -51,20 +51,18 @@ func (factory *middlewareFactory) NewLogger() func(http.HandlerFunc) http.Handle
 	}
 }
 
-func (factory *middlewareFactory) NewSessionGuard(redirectUrl string) func(http.HandlerFunc) http.HandlerFunc {
+func (factory *middlewareFactory) NewPrivateGuard(redirectUrl string) func(http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(response http.ResponseWriter, request *http.Request) {
 			err := factory.sessionVerifier.VerifySession(response, request)
 			if err != nil {
-				// page redirect
-				if request.Method == http.MethodGet {
-					http.Redirect(response, request, redirectUrl, http.StatusSeeOther)
+				if request.Header.Get("HX-Request") == "true" {
+					response.Header().Add("HX-Location", redirectUrl)
+					response.WriteHeader(http.StatusOK)
 					return
 				}
 
-				// htmx redirect
-				response.Header().Add("HX-Location", redirectUrl)
-				response.WriteHeader(http.StatusOK)
+				http.Redirect(response, request, redirectUrl, http.StatusSeeOther)
 				return
 			}
 

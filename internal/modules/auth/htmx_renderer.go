@@ -79,9 +79,14 @@ func (renderer *htmxRenderer) renderLoginForm(name string, password string, erro
 	return buffer.Bytes()
 }
 
-func (renderer *htmxRenderer) renderLogoutPage() []byte {
+type logoutPageData struct {
+	LoggedIn bool
+}
+
+func (renderer *htmxRenderer) renderLogoutPage(loggedIn bool) []byte {
+	data := logoutPageData{loggedIn}
 	buffer := &bytes.Buffer{}
-	err := renderer.logoutPage.Execute(buffer, nil)
+	err := renderer.logoutPage.Execute(buffer, data)
 	if err != nil {
 		log.Panicln(err.Error())
 	}

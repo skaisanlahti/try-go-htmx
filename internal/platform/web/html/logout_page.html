@@ -13,8 +13,18 @@
   </head>
   <body>
     <main id="page" class="container" hx-boost="true">
+      {{ if .LoggedIn }}
+      <h1>You are still logged in</h1>
+      <p>
+        <a href="/htmx/todos">Continue browsing</a>
+      </p>
+      <p>
+        <a href="#" hx-delete="/htmx/users/logout">Logout</a>
+      </p>
+      {{ else }}
       <h1>Logged out</h1>
       <a href="/htmx/login">Back to login</a>
+      {{ end }}
     </main>
     <script type="module" src="/dist/js/index.js"></script>
   </body>

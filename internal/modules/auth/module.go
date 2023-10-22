@@ -26,7 +26,9 @@ func NewModule(
 		duration:   duration,
 	}
 
-	passwordOptions := PasswordOptions{
+	sessionStorage := newSessionStorage()
+	sessionService := newSessionService(sessionOptions, sessionStorage)
+	passwordOptions := passwordOptions{
 		Time:                password.Time,
 		Memory:              password.Memory,
 		Threads:             password.Threads,
@@ -35,13 +37,11 @@ func NewModule(
 		RecalculateOutdated: password.RecalculateOutdated,
 	}
 
-	sessionStorage := newSessionStorage()
-	sessionService := newSessionService(sessionOptions, sessionStorage)
-	passwordService := newPasswordHasher(passwordOptions)
+	passwordHasher := newPasswordHasher(passwordOptions)
 	userStorage := newUserStorage(database)
-	authenticationService := newAuthenticationService(sessionService, passwordService, userStorage)
+	userService := newUserService(userStorage, passwordHasher)
+	authenticationService := newAuthenticationService(sessionService, userService)
 	htmxRenderer := newHtmxRenderer(platform.TemplateFiles)
 	htmxService := newHtmxService(authenticationService, htmxRenderer)
-
 	return &authModule{htmxService, sessionService}
 }

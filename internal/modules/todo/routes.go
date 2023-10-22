@@ -8,7 +8,7 @@ import (
 
 func MapRoutes(router *http.ServeMux, module *todoModule, factory platform.MiddlewareFactory) {
 	log := factory.NewLogger()
-	auth := factory.NewSessionGuard("/htmx/login")
+	auth := factory.NewPrivateGuard("/htmx/login")
 
 	router.HandleFunc("/htmx/todos/remove", log(auth(module.removeTodo)))
 	router.HandleFunc("/htmx/todos/toggle", log(auth(module.toggleTodo)))
