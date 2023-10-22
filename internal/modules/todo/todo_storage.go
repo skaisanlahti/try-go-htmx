@@ -9,7 +9,7 @@ type todoStorage struct {
 	database *sql.DB
 }
 
-func NewTodoStorage(db *sql.DB) *todoStorage {
+func newTodoStorage(db *sql.DB) *todoStorage {
 	return &todoStorage{db}
 }
 

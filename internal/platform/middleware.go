@@ -10,6 +10,11 @@ type sessionVerifier interface {
 	VerifySession(http.ResponseWriter, *http.Request) error
 }
 
+type MiddlewareFactory interface {
+	NewLogger() func(http.HandlerFunc) http.HandlerFunc
+	NewSessionGuard(redirectUrl string) func(http.HandlerFunc) http.HandlerFunc
+}
+
 type middlewareFactory struct {
 	sessionVerifier sessionVerifier
 }
@@ -28,7 +33,7 @@ func (recorder *responseRecorder) WriteHeader(code int) {
 	recorder.ResponseWriter.WriteHeader(code)
 }
 
-func (middleware *middlewareFactory) NewLogger() func(http.HandlerFunc) http.HandlerFunc {
+func (factory *middlewareFactory) NewLogger() func(http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(response http.ResponseWriter, request *http.Request) {
 			start := time.Now()
@@ -46,10 +51,10 @@ func (middleware *middlewareFactory) NewLogger() func(http.HandlerFunc) http.Han
 	}
 }
 
-func (middleware *middlewareFactory) NewSessionGuard(redirectUrl string) func(http.HandlerFunc) http.HandlerFunc {
+func (factory *middlewareFactory) NewSessionGuard(redirectUrl string) func(http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(response http.ResponseWriter, request *http.Request) {
-			err := middleware.sessionVerifier.VerifySession(response, request)
+			err := factory.sessionVerifier.VerifySession(response, request)
 			if err != nil {
 				// page redirect
 				if request.Method == http.MethodGet {

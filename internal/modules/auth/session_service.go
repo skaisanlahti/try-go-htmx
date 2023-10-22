@@ -11,18 +11,23 @@ import (
 	"time"
 )
 
-type SessionOptions struct {
-	Secure          bool
-	CookieName      string
-	SessionSecret   string
-	SessionDuration time.Duration
+type sessionOptions struct {
+	secure     bool
+	cookieName string
+	secret     string
+	duration   time.Duration
 }
 
-func NewSessionService(options SessionOptions, storage *sessionStorage) *sessionService {
+type sessionService struct {
+	options        sessionOptions
+	sessionStorage *sessionStorage
+}
+
+func newSessionService(options sessionOptions, storage *sessionStorage) *sessionService {
 	return &sessionService{options, storage}
 }
 
-func NewSessionSecret(length uint32) string {
+func newSessionSecret(length uint32) string {
 	bytes := make([]byte, length)
 	_, err := rand.Read(bytes)
 	if err != nil {
@@ -32,13 +37,8 @@ func NewSessionSecret(length uint32) string {
 	return base64.StdEncoding.EncodeToString(bytes)
 }
 
-type sessionService struct {
-	options        SessionOptions
-	sessionStorage *sessionStorage
-}
-
 func (service *sessionService) VerifySession(response http.ResponseWriter, request *http.Request) error {
-	cookie, err := request.Cookie(service.options.CookieName)
+	cookie, err := request.Cookie(service.options.cookieName)
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func (service *sessionService) VerifySession(response http.ResponseWriter, reque
 		return errors.New("Session has expired.")
 	}
 
-	session.Expires = time.Now().Add(service.options.SessionDuration)
+	session.Expires = time.Now().Add(service.options.duration)
 	err = service.sessionStorage.updateSession(session)
 	if err != nil {
 		return err
@@ -79,7 +79,7 @@ func (service *sessionService) VerifySession(response http.ResponseWriter, reque
 }
 
 func (service *sessionService) startSession(response http.ResponseWriter, userId int) error {
-	session := newSession(userId, service.options.SessionDuration)
+	session := newSession(userId, service.options.duration)
 	err := service.sessionStorage.addSession(session)
 	if err != nil {
 		return err
@@ -100,7 +100,7 @@ func (service *sessionService) startSession(response http.ResponseWriter, userId
 }
 
 func (service *sessionService) stopSession(response http.ResponseWriter, request *http.Request) error {
-	cookie, err := request.Cookie(service.options.CookieName)
+	cookie, err := request.Cookie(service.options.cookieName)
 	if err != nil {
 		return err
 	}
@@ -121,31 +121,31 @@ func (service *sessionService) stopSession(response http.ResponseWriter, request
 
 func (service *sessionService) newSessionCookie(signedSession string) (*http.Cookie, error) {
 	return &http.Cookie{
-		Name:     service.options.CookieName,
+		Name:     service.options.cookieName,
 		Path:     "/",
 		Value:    signedSession,
-		MaxAge:   int(service.options.SessionDuration.Seconds()),
+		MaxAge:   int(service.options.duration.Seconds()),
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
-		Secure:   service.options.Secure,
+		Secure:   service.options.secure,
 	}, nil
 }
 
 func (service *sessionService) clearSessionCookie() *http.Cookie {
 	return &http.Cookie{
-		Name:     service.options.CookieName,
+		Name:     service.options.cookieName,
 		Path:     "/",
 		Value:    "",
 		MaxAge:   -1,
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
-		Secure:   service.options.Secure,
+		Secure:   service.options.secure,
 	}
 }
 
 func (service *sessionService) newSignature(sessionId string) (string, error) {
-	code := hmac.New(sha256.New, []byte(service.options.SessionSecret))
-	code.Write([]byte(service.options.CookieName))
+	code := hmac.New(sha256.New, []byte(service.options.secret))
+	code.Write([]byte(service.options.cookieName))
 	code.Write([]byte(sessionId))
 	signature := code.Sum(nil)
 	signedSession := sessionId + "." + string(signature)
@@ -166,8 +166,8 @@ func (service *sessionService) verifySignature(encodedSession string) (string, e
 	split := strings.SplitN(string(signedSession), ".", 2)
 	sessionId := split[0]
 	signature := split[1]
-	code := hmac.New(sha256.New, []byte(service.options.SessionSecret))
-	code.Write([]byte(service.options.CookieName))
+	code := hmac.New(sha256.New, []byte(service.options.secret))
+	code.Write([]byte(service.options.cookieName))
 	code.Write([]byte(sessionId))
 	expectedSignature := code.Sum(nil)
 	if !hmac.Equal([]byte(signature), expectedSignature) {

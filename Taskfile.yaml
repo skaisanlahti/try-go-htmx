@@ -3,16 +3,16 @@ version: "3"
 tasks:
   setup:
     cmds:
-      - cd internal/web && pnpm install
+      - cd internal/platform/web && pnpm install
       - task build
 
   dev:
     cmds:
       - docker-compose up -d
-      - cd internal/web && pnpm build
+      - cd internal/platform/web && pnpm build
       - go run cmd/app/main.go || true
 
   build:
     cmds:
-      - cd internal/web && pnpm build
+      - cd internal/platform/web && pnpm build
       - go build -o bin/app cmd/app/main.go

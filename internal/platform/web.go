@@ -1,4 +1,4 @@
-package web
+package platform
 
 import (
 	"embed"
@@ -7,11 +7,11 @@ import (
 	"net/http"
 )
 
-//go:embed dist/*
+//go:embed web/dist/*
 var assetFiles embed.FS
 
 const (
-	assetFilesRoot = "dist"
+	assetFilesRoot = "web/dist"
 	assetPath      = "/dist/"
 )
 
@@ -24,5 +24,5 @@ func MapAssets(router *http.ServeMux) {
 	router.Handle(assetPath, http.StripPrefix(assetPath, http.FileServer(http.FS(assetFiles))))
 }
 
-//go:embed html/*.html
+//go:embed web/html/*.html
 var TemplateFiles embed.FS

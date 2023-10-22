@@ -5,9 +5,16 @@ import (
 	"net/http"
 )
 
-func NewAuthenticationService(
+type authenticationService struct {
+	sessionService  *sessionService
+	passwordService *passwordHasher
+	userStorage     *userStorage
+	fakeUser        user
+}
+
+func newAuthenticationService(
 	sessionService *sessionService,
-	passwordService *passwordService,
+	passwordService *passwordHasher,
 	userStorage *userStorage,
 ) *authenticationService {
 	fakeKey, err := passwordService.hash("password")
@@ -21,13 +28,6 @@ func NewAuthenticationService(
 	}
 
 	return &authenticationService{sessionService, passwordService, userStorage, fakeUser}
-}
-
-type authenticationService struct {
-	sessionService  *sessionService
-	passwordService *passwordService
-	userStorage     *userStorage
-	fakeUser        user
 }
 
 func (service *authenticationService) registerUser(name string, password string, response http.ResponseWriter) error {

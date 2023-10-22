@@ -12,7 +12,7 @@ type sessionStorage struct {
 	locker   sync.RWMutex
 }
 
-func NewSessionStorage() *sessionStorage {
+func newSessionStorage() *sessionStorage {
 	storage := &sessionStorage{
 		sessions: make(map[string]session),
 	}

@@ -8,17 +8,17 @@ import (
 	"time"
 )
 
-func NewHtmxRenderer(files embed.FS) *htmxRenderer {
-	loginPage := template.Must(template.ParseFS(files, "html/login_page.html"))
-	logoutPage := template.Must(template.ParseFS(files, "html/logout_page.html"))
-	registerPage := template.Must(template.ParseFS(files, "html/register_page.html"))
-	return &htmxRenderer{loginPage, logoutPage, registerPage}
-}
-
 type htmxRenderer struct {
 	loginPage    *template.Template
 	logoutPage   *template.Template
 	registerPage *template.Template
+}
+
+func newHtmxRenderer(files embed.FS) *htmxRenderer {
+	loginPage := template.Must(template.ParseFS(files, "web/html/login_page.html"))
+	logoutPage := template.Must(template.ParseFS(files, "web/html/logout_page.html"))
+	registerPage := template.Must(template.ParseFS(files, "web/html/register_page.html"))
+	return &htmxRenderer{loginPage, logoutPage, registerPage}
 }
 
 type registerPageData struct {

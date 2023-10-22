@@ -22,14 +22,13 @@ type PasswordOptions struct {
 	Version             uint32
 }
 
-func NewPasswordService(options PasswordOptions) *passwordService {
-	options.Version = argon2.Version
-	service := &passwordService{options}
-	return service
+type passwordHasher struct {
+	options PasswordOptions
 }
 
-type passwordService struct {
-	options PasswordOptions
+func newPasswordHasher(options PasswordOptions) *passwordHasher {
+	options.Version = argon2.Version
+	return &passwordHasher{options}
 }
 
 func newSalt(length uint32) []byte {
@@ -42,14 +41,14 @@ func newSalt(length uint32) []byte {
 	return bytes
 }
 
-func (service *passwordService) hash(password string) ([]byte, error) {
+func (service *passwordHasher) hash(password string) ([]byte, error) {
 	salt := newSalt(service.options.SaltLength)
 	key := argon2.IDKey([]byte(password), salt, service.options.Time, service.options.Memory, service.options.Threads, service.options.KeyLength)
 	encodedKey := service.encode(salt, key, service.options)
 	return encodedKey, nil
 }
 
-func (service *passwordService) verify(encodedKey []byte, candidatePassword string) (bool, chan []byte) {
+func (service *passwordHasher) verify(encodedKey []byte, candidatePassword string) (bool, chan []byte) {
 	salt, key, options, err := service.decode(encodedKey)
 	if err != nil {
 		return false, nil
@@ -67,13 +66,13 @@ func (service *passwordService) verify(encodedKey []byte, candidatePassword stri
 	return isPasswordCorrect, newKeyChannel
 }
 
-func (service *passwordService) rehash(password string, newKeyChannel chan<- []byte) {
+func (service *passwordHasher) rehash(password string, newKeyChannel chan<- []byte) {
 	defer close(newKeyChannel)
 	newKey, _ := service.hash(password)
 	newKeyChannel <- newKey
 }
 
-func (service *passwordService) encode(salt []byte, key []byte, options PasswordOptions) []byte {
+func (service *passwordHasher) encode(salt []byte, key []byte, options PasswordOptions) []byte {
 	encodedSalt := base64.RawStdEncoding.EncodeToString(salt)
 	encodedKey := base64.RawStdEncoding.EncodeToString(key)
 	fullEncodedKey := []byte(fmt.Sprintf(
@@ -89,7 +88,7 @@ func (service *passwordService) encode(salt []byte, key []byte, options Password
 	return fullEncodedKey
 }
 
-func (service *passwordService) decode(encodedKey []byte) ([]byte, []byte, *PasswordOptions, error) {
+func (service *passwordHasher) decode(encodedKey []byte) ([]byte, []byte, *PasswordOptions, error) {
 	parts := strings.Split(string(encodedKey), "$")
 	if len(parts) != 6 {
 		return nil, nil, nil, errors.New("Invalid key.")
@@ -126,7 +125,7 @@ func (service *passwordService) decode(encodedKey []byte) ([]byte, []byte, *Pass
 	return salt, key, options, nil
 }
 
-func (service *passwordService) check(options *PasswordOptions) bool {
+func (service *passwordHasher) check(options *PasswordOptions) bool {
 	if service.options.Time != options.Time {
 		return false
 	}

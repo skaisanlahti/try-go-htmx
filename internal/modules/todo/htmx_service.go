@@ -13,7 +13,7 @@ type htmxService struct {
 	htmxRenderer *htmxRenderer
 }
 
-func NewHtmxService(todoService *todoService, htmxRenderer *htmxRenderer) *htmxService {
+func newHtmxService(todoService *todoService, htmxRenderer *htmxRenderer) *htmxService {
 	return &htmxService{todoService, htmxRenderer}
 }
 

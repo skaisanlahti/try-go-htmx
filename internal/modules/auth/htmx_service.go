@@ -4,13 +4,13 @@ import (
 	"net/http"
 )
 
-func NewHtmxService(service *authenticationService, renderer *htmxRenderer) *htmxService {
-	return &htmxService{service, renderer}
-}
-
 type htmxService struct {
 	authenticationService *authenticationService
 	htmxRenderer          *htmxRenderer
+}
+
+func newHtmxService(service *authenticationService, renderer *htmxRenderer) *htmxService {
+	return &htmxService{service, renderer}
 }
 
 func (service *htmxService) getRegisterPage(response http.ResponseWriter, request *http.Request) {

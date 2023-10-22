@@ -4,7 +4,7 @@ type todoService struct {
 	todoStorage *todoStorage
 }
 
-func NewTodoService(t *todoStorage) *todoService {
+func newTodoService(t *todoStorage) *todoService {
 	return &todoService{t}
 }
 

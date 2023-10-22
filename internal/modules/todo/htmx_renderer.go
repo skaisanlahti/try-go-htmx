@@ -12,8 +12,8 @@ type htmxRenderer struct {
 	todoPage *template.Template
 }
 
-func NewHtmxRenderer(files embed.FS) *htmxRenderer {
-	todoPage := template.Must(template.ParseFS(files, "html/todo_page.html"))
+func newHtmxRenderer(files embed.FS) *htmxRenderer {
+	todoPage := template.Must(template.ParseFS(files, "web/html/todo_page.html"))
 	return &htmxRenderer{todoPage}
 }
 

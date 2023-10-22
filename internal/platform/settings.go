@@ -7,21 +7,21 @@ import (
 	"strings"
 )
 
-type settings struct {
+type Settings struct {
 	Mode     string           `json:"mode"`
 	Address  string           `json:"address"`
-	Database databaseSettings `json:"database"`
-	Password passwordSettings `json:"password"`
-	Session  sessionSettings  `json:"session"`
+	Database DatabaseSettings `json:"database"`
+	Password PasswordSettings `json:"password"`
+	Session  SessionSettings  `json:"session"`
 }
 
-type databaseSettings struct {
+type DatabaseSettings struct {
 	ConnectionString   string `json:"connectionString"`
 	MigrationDirectory string `json:"migrationDirectory"`
 	MigrateOnStartup   bool   `json:"migrateOnStartup"`
 }
 
-type passwordSettings struct {
+type PasswordSettings struct {
 	Cost                int    `json:"cost"`
 	Time                uint32 `json:"time"`
 	Memory              uint32 `json:"memory"`
@@ -31,20 +31,20 @@ type passwordSettings struct {
 	RecalculateOutdated bool   `json:"recalculateOutdated"`
 }
 
-type sessionSettings struct {
+type SessionSettings struct {
 	Secure             bool    `json:"secure"`
 	CookieName         string  `json:"cookieName"`
 	SecretLength       uint32  `json:"secretLength"`
 	SessionDurationMin float64 `json:"sessionDurationMin"`
 }
 
-func ReadSettings(file string) settings {
+func ReadSettings(file string) Settings {
 	bytes, err := os.ReadFile(file)
 	if err != nil {
 		log.Panic(err.Error())
 	}
 
-	var settings settings
+	var settings Settings
 	if err := json.Unmarshal(bytes, &settings); err != nil {
 		log.Panic(err.Error())
 	}
