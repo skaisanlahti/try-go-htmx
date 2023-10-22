@@ -9,14 +9,17 @@ import (
 	"net/http"
 	"strings"
 	"time"
-
-	"github.com/google/uuid"
 )
 
-func newSession(userId int, duration time.Duration) session {
-	sessionId := uuid.New().String()
-	expires := time.Now().Add(duration)
-	return session{sessionId, userId, expires}
+type SessionOptions struct {
+	Secure          bool
+	CookieName      string
+	SessionSecret   string
+	SessionDuration time.Duration
+}
+
+func NewSessionService(options SessionOptions, storage *sessionStorage) *sessionService {
+	return &sessionService{options, storage}
 }
 
 func NewSessionSecret(length uint32) string {
@@ -29,25 +32,55 @@ func NewSessionSecret(length uint32) string {
 	return base64.StdEncoding.EncodeToString(bytes)
 }
 
-type SessionOptions struct {
-	Secure          bool
-	CookieName      string
-	SessionSecret   string
-	SessionDuration time.Duration
-	SessionStorage  *sessionStorage
-}
-
 type sessionService struct {
-	SessionOptions
+	options        SessionOptions
+	sessionStorage *sessionStorage
 }
 
-func NewSessionService(o SessionOptions) *sessionService {
-	return &sessionService{o}
+func (service *sessionService) VerifySession(response http.ResponseWriter, request *http.Request) error {
+	cookie, err := request.Cookie(service.options.CookieName)
+	if err != nil {
+		return err
+	}
+
+	sessionId, err := service.verifySignature(cookie.Value)
+	if err != nil {
+		return err
+	}
+
+	session, err := service.sessionStorage.findSession(sessionId)
+	if err != nil {
+		return err
+	}
+
+	if session.Expires.Before(time.Now()) {
+		service.sessionStorage.removeSession(session.Id)
+		return errors.New("Session has expired.")
+	}
+
+	session.Expires = time.Now().Add(service.options.SessionDuration)
+	err = service.sessionStorage.updateSession(session)
+	if err != nil {
+		return err
+	}
+
+	signedSession, err := service.newSignature(session.Id)
+	if err != nil {
+		return err
+	}
+
+	newCookie, err := service.newSessionCookie(signedSession)
+	if err != nil {
+		return err
+	}
+
+	http.SetCookie(response, newCookie)
+	return nil
 }
 
 func (service *sessionService) startSession(response http.ResponseWriter, userId int) error {
-	session := newSession(userId, service.SessionDuration)
-	err := service.SessionStorage.addSession(session)
+	session := newSession(userId, service.options.SessionDuration)
+	err := service.sessionStorage.addSession(session)
 	if err != nil {
 		return err
 	}
@@ -67,7 +100,7 @@ func (service *sessionService) startSession(response http.ResponseWriter, userId
 }
 
 func (service *sessionService) stopSession(response http.ResponseWriter, request *http.Request) error {
-	cookie, err := request.Cookie(service.CookieName)
+	cookie, err := request.Cookie(service.options.CookieName)
 	if err != nil {
 		return err
 	}
@@ -77,7 +110,7 @@ func (service *sessionService) stopSession(response http.ResponseWriter, request
 		return err
 	}
 
-	err = service.SessionStorage.removeSession(sessionId)
+	err = service.sessionStorage.removeSession(sessionId)
 	if err != nil {
 		return err
 	}
@@ -86,74 +119,33 @@ func (service *sessionService) stopSession(response http.ResponseWriter, request
 	return nil
 }
 
-func (service *sessionService) VerifySession(response http.ResponseWriter, request *http.Request) error {
-	cookie, err := request.Cookie(service.CookieName)
-	if err != nil {
-		return err
-	}
-
-	sessionId, err := service.verifySignature(cookie.Value)
-	if err != nil {
-		return err
-	}
-
-	session, err := service.SessionStorage.findSession(sessionId)
-	if err != nil {
-		return err
-	}
-
-	if session.Expires.Before(time.Now()) {
-		service.SessionStorage.removeSession(session.Id)
-		return errors.New("Session has expired.")
-	}
-
-	session.Expires = time.Now().Add(service.SessionDuration)
-	err = service.SessionStorage.updateSession(session)
-	if err != nil {
-		return err
-	}
-
-	signedSession, err := service.newSignature(session.Id)
-	if err != nil {
-		return err
-	}
-
-	newCookie, err := service.newSessionCookie(signedSession)
-	if err != nil {
-		return err
-	}
-
-	http.SetCookie(response, newCookie)
-	return nil
-}
-
 func (service *sessionService) newSessionCookie(signedSession string) (*http.Cookie, error) {
 	return &http.Cookie{
-		Name:     service.CookieName,
+		Name:     service.options.CookieName,
 		Path:     "/",
 		Value:    signedSession,
-		MaxAge:   int(service.SessionDuration.Seconds()),
+		MaxAge:   int(service.options.SessionDuration.Seconds()),
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
-		Secure:   service.Secure,
+		Secure:   service.options.Secure,
 	}, nil
 }
 
 func (service *sessionService) clearSessionCookie() *http.Cookie {
 	return &http.Cookie{
-		Name:     service.CookieName,
+		Name:     service.options.CookieName,
 		Path:     "/",
 		Value:    "",
 		MaxAge:   -1,
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
-		Secure:   service.Secure,
+		Secure:   service.options.Secure,
 	}
 }
 
 func (service *sessionService) newSignature(sessionId string) (string, error) {
-	code := hmac.New(sha256.New, []byte(service.SessionSecret))
-	code.Write([]byte(service.CookieName))
+	code := hmac.New(sha256.New, []byte(service.options.SessionSecret))
+	code.Write([]byte(service.options.CookieName))
 	code.Write([]byte(sessionId))
 	signature := code.Sum(nil)
 	signedSession := sessionId + "." + string(signature)
@@ -174,8 +166,8 @@ func (service *sessionService) verifySignature(encodedSession string) (string, e
 	split := strings.SplitN(string(signedSession), ".", 2)
 	sessionId := split[0]
 	signature := split[1]
-	code := hmac.New(sha256.New, []byte(service.SessionSecret))
-	code.Write([]byte(service.CookieName))
+	code := hmac.New(sha256.New, []byte(service.options.SessionSecret))
+	code.Write([]byte(service.options.CookieName))
 	code.Write([]byte(sessionId))
 	expectedSignature := code.Sum(nil)
 	if !hmac.Equal([]byte(signature), expectedSignature) {

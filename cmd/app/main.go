@@ -18,39 +18,39 @@ func main() {
 		MigrationDirectory: settings.Database.MigrationDirectory,
 		MigrateOnStartup:   settings.Database.MigrateOnStartup,
 	})
-	server := platform.NewServer(settings.Address, database)
 
+	server := platform.NewServer(settings.Address, database)
 	sessionSecret := auth.NewSessionSecret(settings.Session.SecretLength)
 	sessionDuration := time.Duration(settings.Session.SessionDurationMin * float64(time.Minute))
-	sessionStorage := auth.NewSessionStorage()
-	sessionService := auth.NewSessionService(auth.SessionOptions{
+	sessionOptions := auth.SessionOptions{
 		Secure:          settings.Session.Secure,
 		CookieName:      settings.Session.CookieName,
 		SessionSecret:   sessionSecret,
 		SessionDuration: sessionDuration,
-		SessionStorage:  sessionStorage,
-	})
+	}
 
-	passwordService := auth.NewPasswordService(auth.PasswordOptions{
+	sessionStorage := auth.NewSessionStorage()
+	sessionService := auth.NewSessionService(sessionOptions, sessionStorage)
+	passwordOptions := auth.PasswordOptions{
 		Time:                settings.Password.Time,
 		Memory:              settings.Password.Memory,
 		Threads:             settings.Password.Threads,
 		SaltLength:          settings.Password.SaltLength,
 		KeyLength:           settings.Password.KeyLength,
 		RecalculateOutdated: settings.Password.RecalculateOutdated,
-	})
+	}
 
-	authService := auth.NewAuthenticationService(sessionService, passwordService, auth.NewUserStorage(database))
-	htmxAuthController := auth.NewHtmxController(authService, auth.NewHtmxRenderer(web.TemplateFiles))
-
+	passwordService := auth.NewPasswordService(passwordOptions)
+	userStorage := auth.NewUserStorage(database)
+	authService := auth.NewAuthenticationService(sessionService, passwordService, userStorage)
+	authHtmxRenderer := auth.NewHtmxRenderer(web.TemplateFiles)
+	authHtmxService := auth.NewHtmxService(authService, authHtmxRenderer)
 	todoService := todo.NewTodoService(todo.NewTodoStorage(database))
-	htmxTodoController := todo.NewHtmxController(todoService, todo.NewHtmxRenderer(web.TemplateFiles))
-
+	todoHtmxRenderer := todo.NewHtmxRenderer(web.TemplateFiles)
+	todoHtmxService := todo.NewHtmxService(todoService, todoHtmxRenderer)
 	middleware := platform.NewMiddlewareFactory(sessionService)
-
 	web.MapAssets(server.Router)
-	auth.MapRoutes(server.Router, htmxAuthController, middleware)
-	todo.MapRoutes(server.Router, htmxTodoController, middleware)
-
+	auth.MapRoutes(server.Router, authHtmxService, middleware)
+	todo.MapRoutes(server.Router, todoHtmxService, middleware)
 	server.Run()
 }

@@ -8,43 +8,43 @@ import (
 	"strconv"
 )
 
-type htmxController struct {
+type htmxService struct {
 	todoService  *todoService
 	htmxRenderer *htmxRenderer
 }
 
-func NewHtmxController(service *todoService, renderer *htmxRenderer) *htmxController {
-	return &htmxController{service, renderer}
+func NewHtmxService(todoService *todoService, htmxRenderer *htmxRenderer) *htmxService {
+	return &htmxService{todoService, htmxRenderer}
 }
 
-func (controller *htmxController) getTodoPage(response http.ResponseWriter, request *http.Request) {
-	todos := controller.todoService.todoStorage.findTodos()
-	html := controller.htmxRenderer.renderTodoPage(todos)
+func (service *htmxService) getTodoPage(response http.ResponseWriter, request *http.Request) {
+	todos := service.todoService.todoStorage.findTodos()
+	html := service.htmxRenderer.renderTodoPage(todos)
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
 	response.Write(html)
 }
 
-func (controller *htmxController) getTodoList(response http.ResponseWriter, request *http.Request) {
-	todos := controller.todoService.todoStorage.findTodos()
-	html := controller.htmxRenderer.renderTodoList(todos)
+func (service *htmxService) getTodoList(response http.ResponseWriter, request *http.Request) {
+	todos := service.todoService.todoStorage.findTodos()
+	html := service.htmxRenderer.renderTodoList(todos)
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
 	response.Write(html)
 }
 
-func (controller *htmxController) addTodo(response http.ResponseWriter, request *http.Request) {
+func (service *htmxService) addTodo(response http.ResponseWriter, request *http.Request) {
 	task := request.FormValue("task")
-	err := controller.todoService.addTodo(task)
+	err := service.todoService.addTodo(task)
 	if err != nil {
-		html := controller.htmxRenderer.renderTodoForm(task, err.Error())
+		html := service.htmxRenderer.renderTodoForm(task, err.Error())
 		response.Header().Add("Content-type", "text/html; charset=utf-8")
 		response.WriteHeader(http.StatusOK)
 		response.Write(html)
 		return
 	}
 
-	html := controller.htmxRenderer.renderTodoForm("", "")
+	html := service.htmxRenderer.renderTodoForm("", "")
 	response.Header().Add("HX-Trigger", "GetTodoList")
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
@@ -72,34 +72,34 @@ func extractTodoId(url *url.URL) (int, error) {
 	return id, nil
 }
 
-func (controller *htmxController) toggleTodo(response http.ResponseWriter, request *http.Request) {
+func (service *htmxService) toggleTodo(response http.ResponseWriter, request *http.Request) {
 	id, err := extractTodoId(request.URL)
 	if err != nil {
 		response.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	err = controller.todoService.toggleTodo(id)
+	err = service.todoService.toggleTodo(id)
 	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	todo, _ := controller.todoService.todoStorage.findTodoById(id)
-	html := controller.htmxRenderer.renderTodoItem(todo)
+	todo, _ := service.todoService.todoStorage.findTodoById(id)
+	html := service.htmxRenderer.renderTodoItem(todo)
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
 	response.Write(html)
 }
 
-func (controller *htmxController) removeTodo(response http.ResponseWriter, request *http.Request) {
+func (service *htmxService) removeTodo(response http.ResponseWriter, request *http.Request) {
 	id, err := extractTodoId(request.URL)
 	if err != nil {
 		response.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	err = controller.todoService.removeTodo(id)
+	err = service.todoService.removeTodo(id)
 	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		return

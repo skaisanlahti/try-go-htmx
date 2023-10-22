@@ -5,19 +5,12 @@ import (
 	"net/http"
 )
 
-type authenticationService struct {
-	sessionService  *sessionService
-	passwordService *passwordService
-	userStorage     *userStorage
-	fakeUser        user
-}
-
 func NewAuthenticationService(
 	sessionService *sessionService,
 	passwordService *passwordService,
 	userStorage *userStorage,
 ) *authenticationService {
-	fakeKey, err := passwordService.newKey("password")
+	fakeKey, err := passwordService.hash("password")
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
@@ -30,13 +23,20 @@ func NewAuthenticationService(
 	return &authenticationService{sessionService, passwordService, userStorage, fakeUser}
 }
 
+type authenticationService struct {
+	sessionService  *sessionService
+	passwordService *passwordService
+	userStorage     *userStorage
+	fakeUser        user
+}
+
 func (service *authenticationService) registerUser(name string, password string, response http.ResponseWriter) error {
 	user, err := service.userStorage.findUserByName(name)
 	if err == nil {
 		return err
 	}
 
-	key, err := service.passwordService.newKey(password)
+	key, err := service.passwordService.hash(password)
 	if err != nil {
 		return err
 	}
@@ -62,11 +62,11 @@ func (service *authenticationService) registerUser(name string, password string,
 func (service *authenticationService) loginUser(name string, password string, response http.ResponseWriter) error {
 	user, err := service.userStorage.findUserByName(name)
 	if err != nil {
-		service.passwordService.verifyKey(service.fakeUser.Key, password)
+		service.passwordService.verify(service.fakeUser.Key, password)
 		return err
 	}
 
-	isPasswordCorrect, newKeyChannel := service.passwordService.verifyKey(user.Key, password)
+	isPasswordCorrect, newKeyChannel := service.passwordService.verify(user.Key, password)
 	if !isPasswordCorrect {
 		return err
 	}

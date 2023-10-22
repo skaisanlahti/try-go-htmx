@@ -22,14 +22,14 @@ type PasswordOptions struct {
 	Version             uint32
 }
 
-type passwordService struct {
-	options PasswordOptions
-}
-
 func NewPasswordService(options PasswordOptions) *passwordService {
 	options.Version = argon2.Version
 	service := &passwordService{options}
 	return service
+}
+
+type passwordService struct {
+	options PasswordOptions
 }
 
 func newSalt(length uint32) []byte {
@@ -42,38 +42,38 @@ func newSalt(length uint32) []byte {
 	return bytes
 }
 
-func (service *passwordService) newKey(password string) ([]byte, error) {
+func (service *passwordService) hash(password string) ([]byte, error) {
 	salt := newSalt(service.options.SaltLength)
 	key := argon2.IDKey([]byte(password), salt, service.options.Time, service.options.Memory, service.options.Threads, service.options.KeyLength)
-	encodedKey := service.encodeKey(salt, key, service.options)
+	encodedKey := service.encode(salt, key, service.options)
 	return encodedKey, nil
 }
 
-func (service *passwordService) verifyKey(encodedKey []byte, candidatePassword string) (bool, chan []byte) {
-	salt, key, options, err := service.decodeKey(encodedKey)
+func (service *passwordService) verify(encodedKey []byte, candidatePassword string) (bool, chan []byte) {
+	salt, key, options, err := service.decode(encodedKey)
 	if err != nil {
 		return false, nil
 	}
 
 	candidateKey := argon2.IDKey([]byte(candidatePassword), salt, options.Time, options.Memory, options.Threads, options.KeyLength)
 	isPasswordCorrect := subtle.ConstantTimeCompare(key, candidateKey) == 1
-	optionsOutdated := service.areOptionsOutdated(options)
+	ok := service.check(options)
 	var newKeyChannel chan []byte
-	if isPasswordCorrect && optionsOutdated && service.options.RecalculateOutdated {
+	if isPasswordCorrect && !ok && service.options.RecalculateOutdated {
 		newKeyChannel = make(chan []byte)
-		go service.recalculateKey(candidatePassword, newKeyChannel)
+		go service.rehash(candidatePassword, newKeyChannel)
 	}
 
 	return isPasswordCorrect, newKeyChannel
 }
 
-func (service *passwordService) recalculateKey(password string, newKeyChannel chan<- []byte) {
+func (service *passwordService) rehash(password string, newKeyChannel chan<- []byte) {
 	defer close(newKeyChannel)
-	newKey, _ := service.newKey(password)
+	newKey, _ := service.hash(password)
 	newKeyChannel <- newKey
 }
 
-func (service *passwordService) encodeKey(salt []byte, key []byte, options PasswordOptions) []byte {
+func (service *passwordService) encode(salt []byte, key []byte, options PasswordOptions) []byte {
 	encodedSalt := base64.RawStdEncoding.EncodeToString(salt)
 	encodedKey := base64.RawStdEncoding.EncodeToString(key)
 	fullEncodedKey := []byte(fmt.Sprintf(
@@ -89,7 +89,7 @@ func (service *passwordService) encodeKey(salt []byte, key []byte, options Passw
 	return fullEncodedKey
 }
 
-func (service *passwordService) decodeKey(encodedKey []byte) ([]byte, []byte, *PasswordOptions, error) {
+func (service *passwordService) decode(encodedKey []byte) ([]byte, []byte, *PasswordOptions, error) {
 	parts := strings.Split(string(encodedKey), "$")
 	if len(parts) != 6 {
 		return nil, nil, nil, errors.New("Invalid key.")
@@ -126,26 +126,26 @@ func (service *passwordService) decodeKey(encodedKey []byte) ([]byte, []byte, *P
 	return salt, key, options, nil
 }
 
-func (service *passwordService) areOptionsOutdated(options *PasswordOptions) bool {
+func (service *passwordService) check(options *PasswordOptions) bool {
 	if service.options.Time != options.Time {
-		return true
+		return false
 	}
 
 	if service.options.Memory != options.Memory {
-		return true
+		return false
 	}
 
 	if service.options.Threads != options.Threads {
-		return true
+		return false
 	}
 
 	if service.options.SaltLength != options.SaltLength {
-		return true
+		return false
 	}
 
 	if service.options.KeyLength != options.KeyLength {
-		return true
+		return false
 	}
 
-	return false
+	return true
 }

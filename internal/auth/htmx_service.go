@@ -4,27 +4,27 @@ import (
 	"net/http"
 )
 
-type htmxController struct {
+func NewHtmxService(service *authenticationService, renderer *htmxRenderer) *htmxService {
+	return &htmxService{service, renderer}
+}
+
+type htmxService struct {
 	authenticationService *authenticationService
 	htmxRenderer          *htmxRenderer
 }
 
-func NewHtmxController(service *authenticationService, renderer *htmxRenderer) *htmxController {
-	return &htmxController{service, renderer}
-}
-
-func (controller *htmxController) getRegisterPage(response http.ResponseWriter, request *http.Request) {
-	html := controller.htmxRenderer.renderRegisterPage()
+func (service *htmxService) getRegisterPage(response http.ResponseWriter, request *http.Request) {
+	html := service.htmxRenderer.renderRegisterPage()
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
 	response.Write(html)
 }
 
-func (controller *htmxController) registerUser(response http.ResponseWriter, request *http.Request) {
+func (service *htmxService) registerUser(response http.ResponseWriter, request *http.Request) {
 	name := request.FormValue("name")
 	password := request.FormValue("password")
 	renderError := func(message string) {
-		html := controller.htmxRenderer.renderRegisterForm(name, password, message)
+		html := service.htmxRenderer.renderRegisterForm(name, password, message)
 		response.Header().Add("Content-type", "text/html; charset=utf-8")
 		response.WriteHeader(http.StatusOK)
 		response.Write(html)
@@ -40,7 +40,7 @@ func (controller *htmxController) registerUser(response http.ResponseWriter, req
 		return
 	}
 
-	err := controller.authenticationService.registerUser(name, password, response)
+	err := service.authenticationService.registerUser(name, password, response)
 	if err != nil {
 		renderError("Application error.")
 		return
@@ -50,25 +50,25 @@ func (controller *htmxController) registerUser(response http.ResponseWriter, req
 	response.WriteHeader(http.StatusOK)
 }
 
-func (controller *htmxController) getLoginPage(response http.ResponseWriter, request *http.Request) {
-	html := controller.htmxRenderer.renderLoginPage()
+func (service *htmxService) getLoginPage(response http.ResponseWriter, request *http.Request) {
+	html := service.htmxRenderer.renderLoginPage()
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
 	response.Write(html)
 }
 
-func (controller *htmxController) getLogoutPage(response http.ResponseWriter, request *http.Request) {
-	html := controller.htmxRenderer.renderLogoutPage()
+func (service *htmxService) getLogoutPage(response http.ResponseWriter, request *http.Request) {
+	html := service.htmxRenderer.renderLogoutPage()
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
 	response.Write(html)
 }
 
-func (controller *htmxController) loginUser(response http.ResponseWriter, request *http.Request) {
+func (service *htmxService) loginUser(response http.ResponseWriter, request *http.Request) {
 	name := request.FormValue("name")
 	password := request.FormValue("password")
 	renderError := func(message string) {
-		html := controller.htmxRenderer.renderLoginForm(name, password, message)
+		html := service.htmxRenderer.renderLoginForm(name, password, message)
 		response.Header().Add("Content-type", "text/html; charset=utf-8")
 		response.WriteHeader(http.StatusOK)
 		response.Write(html)
@@ -84,7 +84,7 @@ func (controller *htmxController) loginUser(response http.ResponseWriter, reques
 		return
 	}
 
-	err := controller.authenticationService.loginUser(name, password, response)
+	err := service.authenticationService.loginUser(name, password, response)
 	if err != nil {
 		renderError("Invalid credentials.")
 		return
@@ -94,8 +94,8 @@ func (controller *htmxController) loginUser(response http.ResponseWriter, reques
 	response.WriteHeader(http.StatusOK)
 }
 
-func (controller *htmxController) logoutUser(response http.ResponseWriter, request *http.Request) {
-	err := controller.authenticationService.logoutUser(response, request)
+func (service *htmxService) logoutUser(response http.ResponseWriter, request *http.Request) {
+	err := service.authenticationService.logoutUser(response, request)
 	if err != nil {
 		response.WriteHeader(http.StatusBadRequest)
 		return
