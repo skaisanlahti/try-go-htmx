@@ -9,7 +9,7 @@ HTMX is having a bit of a renaissance right now, so I wanted to give it a try an
   - Write PostgreSQL queries
 - Writing PostgreSQL migrations manually
 - Building Typescript and SASS assets with Parcel
-- Encoding passwords with Bcrypt and Argon2id
+- Encoding passwords with Argon2id
 - Managing user sessions in a way that is compatible with HTMX
 
 ### Technology
@@ -29,9 +29,9 @@ HTMX is having a bit of a renaissance right now, so I wanted to give it a try an
 
 - Install [Go](https://go.dev/#) to download Go dependencies, run and build application
 - Install [pnpm](https://pnpm.io/installation) to build and bundle web assets
-- Run `pnpm install` to download javascript dependencies
 - Install [Task](https://taskfile.dev/) to run project tasks
 - Install [Docker](https://www.docker.com/) to run database container
+- Run `task install` in project root to install Go and Javascript dependencies
 - Run `task dev` in project root to build database container and apply migrations, build web assets, and run application
 
 ## What is HTMX?
@@ -45,8 +45,8 @@ HTMX is having a bit of a renaissance right now, so I wanted to give it a try an
 - Simplifies frontend architecture
 - Single source of state, no state duplication on the frontend
 - Much smaller Javascript bundle resulting in lightweight sites (good for mobile)
-- Rendering HTML partials without page refreshes (SPA-like experience)
-- Server-side rendering for better Search engine optimization
+- Rendering HTML partials without page refreshes (Single-page-application-like experience)
+- Server-side rendering for better search engine optimization
 - Can be used with any server side framework that supports rendering HTML templates as responses
 
 ## Why Go?
