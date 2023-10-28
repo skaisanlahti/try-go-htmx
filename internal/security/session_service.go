@@ -1,4 +1,4 @@
-package auth
+package security
 
 import (
 	"crypto/hmac"
@@ -9,25 +9,27 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/skaisanlahti/try-go-htmx/internal/entity"
 )
 
-type sessionOptions struct {
-	secure     bool
-	cookieName string
-	secret     string
-	duration   time.Duration
+type SessionOptions struct {
+	Secure     bool
+	CookieName string
+	Secret     string
+	Duration   time.Duration
 }
 
 type sessionService struct {
-	options        sessionOptions
+	options        SessionOptions
 	sessionStorage *sessionStorage
 }
 
-func newSessionService(options sessionOptions, storage *sessionStorage) *sessionService {
+func newSessionService(options SessionOptions, storage *sessionStorage) *sessionService {
 	return &sessionService{options, storage}
 }
 
-func newSessionSecret(length uint32) string {
+func NewSessionSecret(length uint32) string {
 	bytes := make([]byte, length)
 	_, err := rand.Read(bytes)
 	if err != nil {
@@ -37,8 +39,8 @@ func newSessionSecret(length uint32) string {
 	return base64.StdEncoding.EncodeToString(bytes)
 }
 
-func (service *sessionService) VerifySession(response http.ResponseWriter, request *http.Request) error {
-	cookie, err := request.Cookie(service.options.cookieName)
+func (service *sessionService) verifySession(response http.ResponseWriter, request *http.Request) error {
+	cookie, err := request.Cookie(service.options.CookieName)
 	if err != nil {
 		return err
 	}
@@ -48,17 +50,17 @@ func (service *sessionService) VerifySession(response http.ResponseWriter, reque
 		return err
 	}
 
-	session, err := service.sessionStorage.findSession(sessionId)
+	session, err := service.sessionStorage.findSessionBySessionId(sessionId)
 	if err != nil {
 		return err
 	}
 
 	if session.Expires.Before(time.Now()) {
-		service.sessionStorage.removeSession(session.Id)
+		service.sessionStorage.deleteSession(session)
 		return errors.New("Session has expired.")
 	}
 
-	session.Expires = time.Now().Add(service.options.duration)
+	session.Expires = time.Now().Add(service.options.Duration)
 	err = service.sessionStorage.updateSession(session)
 	if err != nil {
 		return err
@@ -79,7 +81,7 @@ func (service *sessionService) VerifySession(response http.ResponseWriter, reque
 }
 
 func (service *sessionService) sessionExists(request *http.Request) bool {
-	cookie, err := request.Cookie(service.options.cookieName)
+	cookie, err := request.Cookie(service.options.CookieName)
 	if err != nil {
 		return false
 	}
@@ -89,7 +91,7 @@ func (service *sessionService) sessionExists(request *http.Request) bool {
 		return false
 	}
 
-	_, err = service.sessionStorage.findSession(sessionId)
+	_, err = service.sessionStorage.findSessionBySessionId(sessionId)
 	if err != nil {
 		return false
 	}
@@ -98,8 +100,8 @@ func (service *sessionService) sessionExists(request *http.Request) bool {
 }
 
 func (service *sessionService) startSession(response http.ResponseWriter, userId int) error {
-	session := newSession(userId, service.options.duration)
-	err := service.sessionStorage.addSession(session)
+	session := entity.NewSession(userId, service.options.Duration)
+	err := service.sessionStorage.insertSession(session)
 	if err != nil {
 		return err
 	}
@@ -118,8 +120,8 @@ func (service *sessionService) startSession(response http.ResponseWriter, userId
 	return nil
 }
 
-func (service *sessionService) stopSession(response http.ResponseWriter, request *http.Request) error {
-	cookie, err := request.Cookie(service.options.cookieName)
+func (service *sessionService) clearSession(response http.ResponseWriter, request *http.Request) error {
+	cookie, err := request.Cookie(service.options.CookieName)
 	if err != nil {
 		return err
 	}
@@ -129,7 +131,12 @@ func (service *sessionService) stopSession(response http.ResponseWriter, request
 		return err
 	}
 
-	err = service.sessionStorage.removeSession(sessionId)
+	session, err := service.sessionStorage.findSessionBySessionId(sessionId)
+	if err != nil {
+		return err
+	}
+
+	err = service.sessionStorage.deleteSession(session)
 	if err != nil {
 		return err
 	}
@@ -140,31 +147,31 @@ func (service *sessionService) stopSession(response http.ResponseWriter, request
 
 func (service *sessionService) newSessionCookie(signedSession string) (*http.Cookie, error) {
 	return &http.Cookie{
-		Name:     service.options.cookieName,
+		Name:     service.options.CookieName,
 		Path:     "/",
 		Value:    signedSession,
-		MaxAge:   int(service.options.duration.Seconds()),
+		MaxAge:   int(service.options.Duration.Seconds()),
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
-		Secure:   service.options.secure,
+		Secure:   service.options.Secure,
 	}, nil
 }
 
 func (service *sessionService) clearSessionCookie() *http.Cookie {
 	return &http.Cookie{
-		Name:     service.options.cookieName,
+		Name:     service.options.CookieName,
 		Path:     "/",
 		Value:    "",
 		MaxAge:   -1,
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
-		Secure:   service.options.secure,
+		Secure:   service.options.Secure,
 	}
 }
 
 func (service *sessionService) newSignature(sessionId string) (string, error) {
-	code := hmac.New(sha256.New, []byte(service.options.secret))
-	code.Write([]byte(service.options.cookieName))
+	code := hmac.New(sha256.New, []byte(service.options.Secret))
+	code.Write([]byte(service.options.CookieName))
 	code.Write([]byte(sessionId))
 	signature := code.Sum(nil)
 	signedSession := sessionId + "." + string(signature)
@@ -185,8 +192,8 @@ func (service *sessionService) verifySignature(encodedSession string) (string, e
 	split := strings.SplitN(string(signedSession), ".", 2)
 	sessionId := split[0]
 	signature := split[1]
-	code := hmac.New(sha256.New, []byte(service.options.secret))
-	code.Write([]byte(service.options.cookieName))
+	code := hmac.New(sha256.New, []byte(service.options.Secret))
+	code.Write([]byte(service.options.CookieName))
 	code.Write([]byte(sessionId))
 	expectedSignature := code.Sum(nil)
 	if !hmac.Equal([]byte(signature), expectedSignature) {

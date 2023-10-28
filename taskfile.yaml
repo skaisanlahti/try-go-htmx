@@ -3,16 +3,16 @@ version: "3"
 tasks:
   install:
     cmds:
-      - cd internal/platform/web && pnpm install
+      - cd internal/client/htmx/web && pnpm install
       - task build
 
   dev:
     cmds:
       - docker-compose up -d
-      - cd internal/platform/web && pnpm build
+      - cd internal/client/htmx/web && pnpm build
       - go run cmd/app/main.go || true
 
   build:
     cmds:
-      - cd internal/platform/web && pnpm build
+      - cd internal/client/htmx/web && pnpm build
       - go build -o bin/app cmd/app/main.go

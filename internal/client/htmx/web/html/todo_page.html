@@ -14,7 +14,7 @@
   <body>
     <main id="page" class="container" hx-boost="true">
       <div class="logout">
-        <a href="#" hx-delete="/htmx/users/logout">Logout</a>
+        <a href="#" hx-delete="/htmx/api/logout">Logout</a>
       </div>
       <h1>Todo list</h1>
       <!-- .Key as name attribute required to stop firefox from preserving values through page refresh -->
@@ -22,7 +22,7 @@
       <form
         id="todo-form"
         name="{{ .Key }}"
-        hx-post="/htmx/todos/add"
+        hx-post="/htmx/api/todos/add"
         hx-target="#todo-form"
         hx-swap="outerHTML"
       >
@@ -39,7 +39,7 @@
       <div
         class="container"
         id="todos"
-        hx-get="/htmx/todos/list"
+        hx-get="/htmx/api/todos/list"
         hx-trigger="GetTodoList from:body"
         hx-swap="outerHTML swap:500ms"
       >
@@ -53,7 +53,7 @@
           <button
             role="button"
             class="todo_item-toggle"
-            hx-patch="/htmx/todos/toggle?id={{ .Id }}"
+            hx-patch="/htmx/api/todos/toggle?id={{ .Id }}"
             hx-target="#item-{{ .Id }}"
             hx-swap="outerHTML settle:0ms"
           >
@@ -62,7 +62,7 @@
           <button
             role="button"
             class="secondary"
-            hx-delete="/htmx/todos/remove?id={{ .Id }}"
+            hx-delete="/htmx/api/todos/remove?id={{ .Id }}"
             hx-target="#item-{{ .Id }}"
             hx-swap="outerHTML swap:1000ms"
           >
@@ -72,7 +72,7 @@
           <button
             role="button"
             class="todo_item-toggle outline"
-            hx-patch="/htmx/todos/toggle?id={{ .Id }}"
+            hx-patch="/htmx/api/todos/toggle?id={{ .Id }}"
             hx-target="#item-{{ .Id }}"
             hx-swap="outerHTML settle:0ms"
           >

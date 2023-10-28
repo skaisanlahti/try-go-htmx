@@ -1,20 +1,22 @@
-package auth
+package security
 
 import (
 	"database/sql"
 	"log"
+
+	"github.com/skaisanlahti/try-go-htmx/internal/entity"
 )
 
 type userStorage struct {
 	database *sql.DB
 }
 
-func newUserStorage(db *sql.DB) *userStorage {
-	return &userStorage{db}
+func newUserStorage(database *sql.DB) *userStorage {
+	return &userStorage{database}
 }
 
-func (storage *userStorage) findUsers() []user {
-	var users []user
+func (storage *userStorage) findUsers() []entity.User {
+	var users []entity.User
 	query := `SELECT * FROM "Users"`
 	rows, err := storage.database.Query(query)
 	if err != nil {
@@ -24,7 +26,7 @@ func (storage *userStorage) findUsers() []user {
 
 	defer rows.Close()
 	for rows.Next() {
-		var user user
+		var user entity.User
 		if err := rows.Scan(&user.Id, &user.Name, &user.Key); err != nil {
 			log.Println(err.Error())
 			return users
@@ -52,8 +54,8 @@ func (storage *userStorage) userExists(name string) bool {
 	return exists
 }
 
-func (storage *userStorage) findUserByName(name string) (user, error) {
-	var user user
+func (storage *userStorage) findUserByName(name string) (entity.User, error) {
+	var user entity.User
 	query := `SELECT * FROM "Users" WHERE "Name" = $1`
 	row := storage.database.QueryRow(query, name)
 	if err := row.Scan(&user.Id, &user.Name, &user.Key); err != nil {
@@ -67,7 +69,7 @@ func (storage *userStorage) findUserByName(name string) (user, error) {
 	return user, nil
 }
 
-func (storage *userStorage) addUser(user user) (int, error) {
+func (storage *userStorage) insertUser(user entity.User) (int, error) {
 	var id int
 	query := `INSERT INTO "Users" ("Name", "Password") VALUES ($1, $2) RETURNING "Id"`
 	row := storage.database.QueryRow(query, &user.Name, &user.Key)
@@ -79,19 +81,9 @@ func (storage *userStorage) addUser(user user) (int, error) {
 	return id, nil
 }
 
-func (storage *userStorage) updateUserKey(user user) error {
+func (storage *userStorage) updateUserKey(user entity.User) error {
 	query := `UPDATE "Users" SET "Password" = $2 WHERE "Id" = $1`
 	if _, err := storage.database.Exec(query, &user.Id, &user.Key); err != nil {
-		log.Println(err.Error())
-		return err
-	}
-
-	return nil
-}
-
-func (storage *userStorage) removeUser(id int) error {
-	query := `DELETE FROM "Users" WHERE "Id" = $1`
-	if _, err := storage.database.Exec(query, id); err != nil {
 		log.Println(err.Error())
 		return err
 	}

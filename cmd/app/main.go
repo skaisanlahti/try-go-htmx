@@ -1,10 +1,13 @@
 package main
 
 import (
+	"time"
+
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/skaisanlahti/try-go-htmx/internal/modules/auth"
-	"github.com/skaisanlahti/try-go-htmx/internal/modules/todo"
+	"github.com/skaisanlahti/try-go-htmx/internal/client/htmx"
 	"github.com/skaisanlahti/try-go-htmx/internal/platform"
+	"github.com/skaisanlahti/try-go-htmx/internal/security"
+	"github.com/skaisanlahti/try-go-htmx/internal/todo"
 )
 
 func main() {
@@ -17,12 +20,24 @@ func main() {
 	})
 
 	server := platform.NewServer(settings.Address, database)
-	authModule := auth.NewModule(settings.Password, settings.Session, database)
-	todoModule := todo.NewModule(database)
-	middleware := platform.NewMiddlewareFactory(authModule)
+	passwordOptions := security.PasswordOptions{
+		Time:                settings.Password.Time,
+		Memory:              settings.Password.Memory,
+		Threads:             settings.Password.Threads,
+		SaltLength:          settings.Password.SaltLength,
+		KeyLength:           settings.Password.KeyLength,
+		RecalculateOutdated: true,
+	}
 
-	platform.MapAssets(server.Router)
-	auth.MapRoutes(server.Router, authModule, middleware)
-	todo.MapRoutes(server.Router, todoModule, middleware)
+	sessionOptions := security.SessionOptions{
+		CookieName: settings.Session.CookieName,
+		Secure:     settings.Session.Secure,
+		Secret:     security.NewSessionSecret(settings.Session.SecretLength),
+		Duration:   time.Duration(settings.Session.SessionDurationMin * float64(time.Minute)),
+	}
+
+	security := security.NewSecurityService(database, passwordOptions, sessionOptions)
+	todo := todo.NewTodoService(database)
+	htmx.NewClient(security, todo, server.Router)
 	server.Run()
 }

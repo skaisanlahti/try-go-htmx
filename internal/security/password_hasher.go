@@ -1,4 +1,4 @@
-package auth
+package security
 
 import (
 	"crypto/rand"
@@ -12,7 +12,7 @@ import (
 	"golang.org/x/crypto/argon2"
 )
 
-type passwordOptions struct {
+type PasswordOptions struct {
 	Time                uint32
 	Memory              uint32
 	Threads             uint8
@@ -23,10 +23,10 @@ type passwordOptions struct {
 }
 
 type passwordHasher struct {
-	options passwordOptions
+	options PasswordOptions
 }
 
-func newPasswordHasher(options passwordOptions) *passwordHasher {
+func newPasswordHasher(options PasswordOptions) *passwordHasher {
 	options.Version = argon2.Version
 	return &passwordHasher{options}
 }
@@ -72,7 +72,7 @@ func (hasher *passwordHasher) rehash(password string, newKeyChannel chan<- []byt
 	newKeyChannel <- newKey
 }
 
-func (hasher *passwordHasher) encode(salt []byte, key []byte, options passwordOptions) []byte {
+func (hasher *passwordHasher) encode(salt []byte, key []byte, options PasswordOptions) []byte {
 	encodedSalt := base64.RawStdEncoding.EncodeToString(salt)
 	encodedKey := base64.RawStdEncoding.EncodeToString(key)
 	fullEncodedKey := []byte(fmt.Sprintf(
@@ -88,7 +88,7 @@ func (hasher *passwordHasher) encode(salt []byte, key []byte, options passwordOp
 	return fullEncodedKey
 }
 
-func (hasher *passwordHasher) decode(encodedKey []byte) ([]byte, []byte, *passwordOptions, error) {
+func (hasher *passwordHasher) decode(encodedKey []byte) ([]byte, []byte, *PasswordOptions, error) {
 	parts := strings.Split(string(encodedKey), "$")
 	if len(parts) != 6 {
 		return nil, nil, nil, errors.New("Invalid key.")
@@ -104,7 +104,7 @@ func (hasher *passwordHasher) decode(encodedKey []byte) ([]byte, []byte, *passwo
 		return nil, nil, nil, errors.New("Incompatible argon2 version.")
 	}
 
-	options := &passwordOptions{}
+	options := &PasswordOptions{}
 	_, err = fmt.Sscanf(parts[3], "time=%d,memory=%d,threads=%d", &options.Time, &options.Memory, &options.Threads)
 	if err != nil {
 		return nil, nil, nil, err
@@ -125,7 +125,7 @@ func (hasher *passwordHasher) decode(encodedKey []byte) ([]byte, []byte, *passwo
 	return salt, key, options, nil
 }
 
-func (hasher *passwordHasher) check(options *passwordOptions) bool {
+func (hasher *passwordHasher) check(options *PasswordOptions) bool {
 	if hasher.options.Time != options.Time {
 		return false
 	}

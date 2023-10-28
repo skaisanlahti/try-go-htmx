@@ -1,4 +1,4 @@
-package auth
+package entity
 
 import (
 	"time"
@@ -6,14 +6,14 @@ import (
 	"github.com/google/uuid"
 )
 
-type session struct {
+type Session struct {
 	Id      string
 	UserId  int
 	Expires time.Time
 }
 
-func newSession(userId int, duration time.Duration) session {
+func NewSession(userId int, duration time.Duration) Session {
 	sessionId := uuid.New().String()
 	expires := time.Now().Add(duration)
-	return session{sessionId, userId, expires}
+	return Session{sessionId, userId, expires}
 }

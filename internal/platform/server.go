@@ -44,9 +44,9 @@ func (server *server) shutdown(exit chan struct{}) {
 	signal.Notify(interrupt, os.Interrupt, os.Kill, syscall.SIGTERM, syscall.SIGINT)
 	<-interrupt
 
-	context, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	token, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	err := server.Shutdown(context)
+	err := server.Shutdown(token)
 	if err != nil {
 		log.Printf("HTTP server Shutdown: %v", err)
 	}

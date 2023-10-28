@@ -1,27 +1,10 @@
-package platform
+package htmx
 
 import (
 	"log"
 	"net/http"
 	"time"
 )
-
-type sessionVerifier interface {
-	VerifySession(http.ResponseWriter, *http.Request) error
-}
-
-type MiddlewareFactory interface {
-	NewLogger() func(http.HandlerFunc) http.HandlerFunc
-	NewPrivateGuard(redirectUrl string) func(http.HandlerFunc) http.HandlerFunc
-}
-
-type middlewareFactory struct {
-	sessionVerifier sessionVerifier
-}
-
-func NewMiddlewareFactory(sessionVerifier sessionVerifier) *middlewareFactory {
-	return &middlewareFactory{sessionVerifier}
-}
 
 type responseRecorder struct {
 	http.ResponseWriter
@@ -33,7 +16,7 @@ func (recorder *responseRecorder) WriteHeader(code int) {
 	recorder.ResponseWriter.WriteHeader(code)
 }
 
-func (factory *middlewareFactory) NewLogger() func(http.HandlerFunc) http.HandlerFunc {
+func (client *Client) logRequest() func(http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(response http.ResponseWriter, request *http.Request) {
 			start := time.Now()
@@ -51,10 +34,10 @@ func (factory *middlewareFactory) NewLogger() func(http.HandlerFunc) http.Handle
 	}
 }
 
-func (factory *middlewareFactory) NewPrivateGuard(redirectUrl string) func(http.HandlerFunc) http.HandlerFunc {
+func (client *Client) requireSession(redirectUrl string) func(http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(response http.ResponseWriter, request *http.Request) {
-			err := factory.sessionVerifier.VerifySession(response, request)
+			err := client.app.VerifySession(response, request)
 			if err != nil {
 				if request.Header.Get("HX-Request") == "true" {
 					response.Header().Add("HX-Location", redirectUrl)
