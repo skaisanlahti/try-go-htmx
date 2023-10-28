@@ -5,11 +5,11 @@ import (
 	"github.com/skaisanlahti/try-go-htmx/internal/todo"
 )
 
-type applicationFacade struct {
+type application struct {
 	*security.SecurityService
 	*todo.TodoService
 }
 
-func newApplicationFacade(security *security.SecurityService, todo *todo.TodoService) *applicationFacade {
-	return &applicationFacade{security, todo}
+func newApplication(security *security.SecurityService, todo *todo.TodoService) *application {
+	return &application{security, todo}
 }

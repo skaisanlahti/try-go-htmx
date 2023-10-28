@@ -41,38 +41,38 @@ func newSalt(length uint32) []byte {
 	return bytes
 }
 
-func (hasher *passwordHasher) hash(password string) ([]byte, error) {
-	salt := newSalt(hasher.options.SaltLength)
-	key := argon2.IDKey([]byte(password), salt, hasher.options.Time, hasher.options.Memory, hasher.options.Threads, hasher.options.KeyLength)
-	encodedKey := hasher.encode(salt, key, hasher.options)
+func (this *passwordHasher) hash(password string) ([]byte, error) {
+	salt := newSalt(this.options.SaltLength)
+	key := argon2.IDKey([]byte(password), salt, this.options.Time, this.options.Memory, this.options.Threads, this.options.KeyLength)
+	encodedKey := this.encode(salt, key, this.options)
 	return encodedKey, nil
 }
 
-func (hasher *passwordHasher) verify(encodedKey []byte, candidatePassword string) (bool, chan []byte) {
-	salt, key, options, err := hasher.decode(encodedKey)
+func (this *passwordHasher) verify(encodedKey []byte, candidatePassword string) (bool, chan []byte) {
+	salt, key, options, err := this.decode(encodedKey)
 	if err != nil {
 		return false, nil
 	}
 
 	candidateKey := argon2.IDKey([]byte(candidatePassword), salt, options.Time, options.Memory, options.Threads, options.KeyLength)
 	isPasswordCorrect := subtle.ConstantTimeCompare(key, candidateKey) == 1
-	ok := hasher.check(options)
+	ok := this.check(options)
 	var newKeyChannel chan []byte
-	if isPasswordCorrect && !ok && hasher.options.RecalculateOutdated {
+	if isPasswordCorrect && !ok && this.options.RecalculateOutdated {
 		newKeyChannel = make(chan []byte)
-		go hasher.rehash(candidatePassword, newKeyChannel)
+		go this.rehash(candidatePassword, newKeyChannel)
 	}
 
 	return isPasswordCorrect, newKeyChannel
 }
 
-func (hasher *passwordHasher) rehash(password string, newKeyChannel chan<- []byte) {
+func (this *passwordHasher) rehash(password string, newKeyChannel chan<- []byte) {
 	defer close(newKeyChannel)
-	newKey, _ := hasher.hash(password)
+	newKey, _ := this.hash(password)
 	newKeyChannel <- newKey
 }
 
-func (hasher *passwordHasher) encode(salt []byte, key []byte, options PasswordOptions) []byte {
+func (this *passwordHasher) encode(salt []byte, key []byte, options PasswordOptions) []byte {
 	encodedSalt := base64.RawStdEncoding.EncodeToString(salt)
 	encodedKey := base64.RawStdEncoding.EncodeToString(key)
 	fullEncodedKey := []byte(fmt.Sprintf(
@@ -88,7 +88,7 @@ func (hasher *passwordHasher) encode(salt []byte, key []byte, options PasswordOp
 	return fullEncodedKey
 }
 
-func (hasher *passwordHasher) decode(encodedKey []byte) ([]byte, []byte, *PasswordOptions, error) {
+func (this *passwordHasher) decode(encodedKey []byte) ([]byte, []byte, *PasswordOptions, error) {
 	parts := strings.Split(string(encodedKey), "$")
 	if len(parts) != 6 {
 		return nil, nil, nil, errors.New("Invalid key.")
@@ -125,24 +125,24 @@ func (hasher *passwordHasher) decode(encodedKey []byte) ([]byte, []byte, *Passwo
 	return salt, key, options, nil
 }
 
-func (hasher *passwordHasher) check(options *PasswordOptions) bool {
-	if hasher.options.Time != options.Time {
+func (this *passwordHasher) check(options *PasswordOptions) bool {
+	if this.options.Time != options.Time {
 		return false
 	}
 
-	if hasher.options.Memory != options.Memory {
+	if this.options.Memory != options.Memory {
 		return false
 	}
 
-	if hasher.options.Threads != options.Threads {
+	if this.options.Threads != options.Threads {
 		return false
 	}
 
-	if hasher.options.SaltLength != options.SaltLength {
+	if this.options.SaltLength != options.SaltLength {
 		return false
 	}
 
-	if hasher.options.KeyLength != options.KeyLength {
+	if this.options.KeyLength != options.KeyLength {
 		return false
 	}
 

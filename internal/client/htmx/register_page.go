@@ -6,21 +6,21 @@ import (
 	"github.com/skaisanlahti/try-go-htmx/internal/security"
 )
 
-func (client *Client) getRegisterPage(response http.ResponseWriter, request *http.Request) {
-	isLoggedIn := client.app.IsLoggedIn(request)
+func (this *Client) getRegisterPage(response http.ResponseWriter, request *http.Request) {
+	isLoggedIn := this.app.IsLoggedIn(request)
 	if isLoggedIn {
 		http.Redirect(response, request, "/htmx/todos", http.StatusSeeOther)
 		return
 	}
 
-	html := client.renderer.renderRegisterPage()
+	html := this.renderer.renderRegisterPage()
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
 	response.Write(html)
 }
 
-func (client *Client) registerUser(response http.ResponseWriter, request *http.Request) {
-	isLoggedIn := client.app.IsLoggedIn(request)
+func (this *Client) registerUser(response http.ResponseWriter, request *http.Request) {
+	isLoggedIn := this.app.IsLoggedIn(request)
 	if isLoggedIn {
 		response.WriteHeader(http.StatusBadRequest)
 		return
@@ -29,7 +29,7 @@ func (client *Client) registerUser(response http.ResponseWriter, request *http.R
 	name := request.FormValue("name")
 	password := request.FormValue("password")
 	renderError := func(message string) {
-		html := client.renderer.renderRegisterForm(name, password, message)
+		html := this.renderer.renderRegisterForm(name, password, message)
 		response.Header().Add("Content-type", "text/html; charset=utf-8")
 		response.WriteHeader(http.StatusOK)
 		response.Write(html)
@@ -45,7 +45,7 @@ func (client *Client) registerUser(response http.ResponseWriter, request *http.R
 		return
 	}
 
-	err := client.app.RegisterUser(name, password, response)
+	err := this.app.RegisterUser(name, password, response)
 	if err == security.ErrUserAlreadyExists {
 		renderError(err.Error())
 		return

@@ -21,27 +21,13 @@ func NewSecurityService(
 	}
 }
 
-func (service *SecurityService) RegisterUser(name string, password string, response http.ResponseWriter) error {
-	userId, err := service.user.newUser(name, password)
+func (this *SecurityService) RegisterUser(name string, password string, response http.ResponseWriter) error {
+	userId, err := this.user.newUser(name, password)
 	if err != nil {
 		return err
 	}
 
-	err = service.session.startSession(response, userId)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (service *SecurityService) LoginUser(name string, password string, response http.ResponseWriter) error {
-	user, err := service.user.verifyUser(name, password)
-	if err != nil {
-		return err
-	}
-
-	err = service.session.startSession(response, user.Id)
+	err = this.session.startSession(response, userId)
 	if err != nil {
 		return err
 	}
@@ -49,8 +35,13 @@ func (service *SecurityService) LoginUser(name string, password string, response
 	return nil
 }
 
-func (service *SecurityService) LogoutUser(response http.ResponseWriter, request *http.Request) error {
-	err := service.session.clearSession(response, request)
+func (this *SecurityService) LoginUser(name string, password string, response http.ResponseWriter) error {
+	user, err := this.user.verifyUser(name, password)
+	if err != nil {
+		return err
+	}
+
+	err = this.session.startSession(response, user.Id)
 	if err != nil {
 		return err
 	}
@@ -58,8 +49,17 @@ func (service *SecurityService) LogoutUser(response http.ResponseWriter, request
 	return nil
 }
 
-func (service *SecurityService) IsLoggedIn(request *http.Request) bool {
-	ok := service.session.sessionExists(request)
+func (this *SecurityService) LogoutUser(response http.ResponseWriter, request *http.Request) error {
+	err := this.session.clearSession(response, request)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (this *SecurityService) IsLoggedIn(request *http.Request) bool {
+	ok := this.session.sessionExists(request)
 	if !ok {
 		return false
 	}
@@ -67,8 +67,8 @@ func (service *SecurityService) IsLoggedIn(request *http.Request) bool {
 	return true
 }
 
-func (service *SecurityService) VerifySession(response http.ResponseWriter, request *http.Request) error {
-	err := service.session.verifySession(response, request)
+func (this *SecurityService) VerifySession(response http.ResponseWriter, request *http.Request) error {
+	err := this.session.verifySession(response, request)
 	if err != nil {
 		return err
 	}

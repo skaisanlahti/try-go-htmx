@@ -19,30 +19,30 @@ func newUserService(storage *userStorage, password *passwordHasher) *userService
 		log.Fatalln(err.Error())
 	}
 
-	fakeUser := entity.User{Name: "username", Key: fakeKey}
+	fakeUser := entity.NewUser("username", fakeKey)
 	return &userService{storage, password, fakeUser}
 }
 
 var ErrUserAlreadyExists = errors.New("Username already exists.")
 
-func (service *userService) newUser(name string, password string) (int, error) {
-	nameExists := service.storage.userExists(name)
+func (this *userService) newUser(name string, password string) (int, error) {
+	nameExists := this.storage.userExists(name)
 	if nameExists {
 		return 0, ErrUserAlreadyExists
 	}
 
-	key, err := service.hasher.hash(password)
+	key, err := this.hasher.hash(password)
 	if err != nil {
 		return 0, err
 	}
 
 	user := entity.NewUser(name, key)
-	err = service.validateUser(user)
+	err = user.Validate()
 	if err != nil {
 		return 0, err
 	}
 
-	userId, err := service.storage.insertUser(user)
+	userId, err := this.storage.insertUser(user)
 	if err != nil {
 		return 0, err
 	}
@@ -50,41 +50,28 @@ func (service *userService) newUser(name string, password string) (int, error) {
 	return userId, nil
 }
 
-func (service *userService) validateUser(user entity.User) error {
-	nameLength := len([]rune(user.Name))
-	if nameLength < 3 {
-		return errors.New("User name is too short.")
-	}
-
-	if nameLength > 100 {
-		return errors.New("User name is too long.")
-	}
-
-	return nil
-}
-
 var ErrInvalidCredentials = errors.New("Invalid credentials.")
 
-func (service *userService) verifyUser(name string, password string) (entity.User, error) {
-	user, err := service.storage.findUserByName(name)
+func (this *userService) verifyUser(name string, password string) (entity.User, error) {
+	user, err := this.storage.findUserByName(name)
 	if err != nil {
-		service.hasher.verify(service.fake.Key, password)
+		this.hasher.verify(this.fake.Key, password)
 		return user, ErrInvalidCredentials
 	}
 
-	isPasswordCorrect, newKeyChannel := service.hasher.verify(user.Key, password)
+	isPasswordCorrect, newKeyChannel := this.hasher.verify(user.Key, password)
 	if !isPasswordCorrect {
 		return user, ErrInvalidCredentials
 	}
 
 	if newKeyChannel != nil {
-		go service.updateUserKey(user, newKeyChannel)
+		go this.updateUserKey(user, newKeyChannel)
 	}
 
 	return user, nil
 }
 
-func (service *userService) updateUserKey(user entity.User, newKeyChannel <-chan []byte) {
+func (this *userService) updateUserKey(user entity.User, newKeyChannel <-chan []byte) {
 	newKey, ok := <-newKeyChannel
 	if !ok {
 		log.Printf("User: %s | Key update failed: recalculation failed.", user.Name)
@@ -92,7 +79,7 @@ func (service *userService) updateUserKey(user entity.User, newKeyChannel <-chan
 	}
 
 	user.Key = newKey
-	err := service.storage.updateUserKey(user)
+	err := this.storage.updateUserKey(user)
 	if err != nil {
 		log.Printf("User: %s | Key update failed: database update failed.", user.Name)
 	}

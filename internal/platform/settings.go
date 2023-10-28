@@ -38,8 +38,8 @@ type SessionSettings struct {
 	SessionDurationMin float64 `json:"sessionDurationMin"`
 }
 
-func ReadSettings(file string) Settings {
-	bytes, err := os.ReadFile(file)
+func ReadSettings(fileName string) Settings {
+	bytes, err := os.ReadFile(fileName)
 	if err != nil {
 		log.Panic(err.Error())
 	}

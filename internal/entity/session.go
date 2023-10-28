@@ -17,3 +17,8 @@ func NewSession(userId int, duration time.Duration) Session {
 	expires := time.Now().Add(duration)
 	return Session{sessionId, userId, expires}
 }
+
+func (this Session) Extend(duration time.Duration) Session {
+	this.Expires = time.Now().Add(duration)
+	return this
+}

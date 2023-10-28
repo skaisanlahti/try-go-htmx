@@ -8,12 +8,12 @@ import (
 )
 
 type Client struct {
-	app      *applicationFacade
+	app      *application
 	renderer *renderer
 }
 
 func NewClient(security *security.SecurityService, todo *todo.TodoService, router *http.ServeMux) {
-	client := &Client{&applicationFacade{security, todo}, newRenderer()}
+	client := &Client{&application{security, todo}, newRenderer()}
 	log := client.logRequest()
 	private := client.requireSession("/htmx/login")
 

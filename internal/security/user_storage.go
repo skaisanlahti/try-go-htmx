@@ -15,10 +15,10 @@ func newUserStorage(database *sql.DB) *userStorage {
 	return &userStorage{database}
 }
 
-func (storage *userStorage) findUsers() []entity.User {
+func (this *userStorage) findUsers() []entity.User {
 	var users []entity.User
 	query := `SELECT * FROM "Users"`
-	rows, err := storage.database.Query(query)
+	rows, err := this.database.Query(query)
 	if err != nil {
 		log.Println(err.Error())
 		return users
@@ -38,10 +38,10 @@ func (storage *userStorage) findUsers() []entity.User {
 	return users
 }
 
-func (storage *userStorage) userExists(name string) bool {
+func (this *userStorage) userExists(name string) bool {
 	var exists bool
 	query := `SELECT EXISTS(SELECT 1 FROM "Users" WHERE "Name" = $1 )`
-	row := storage.database.QueryRow(query, name)
+	row := this.database.QueryRow(query, name)
 	err := row.Scan(&exists)
 	if err != nil {
 		if err != sql.ErrNoRows {
@@ -54,10 +54,10 @@ func (storage *userStorage) userExists(name string) bool {
 	return exists
 }
 
-func (storage *userStorage) findUserByName(name string) (entity.User, error) {
+func (this *userStorage) findUserByName(name string) (entity.User, error) {
 	var user entity.User
 	query := `SELECT * FROM "Users" WHERE "Name" = $1`
-	row := storage.database.QueryRow(query, name)
+	row := this.database.QueryRow(query, name)
 	if err := row.Scan(&user.Id, &user.Name, &user.Key); err != nil {
 		if err != sql.ErrNoRows {
 			log.Println(err.Error())
@@ -69,10 +69,10 @@ func (storage *userStorage) findUserByName(name string) (entity.User, error) {
 	return user, nil
 }
 
-func (storage *userStorage) insertUser(user entity.User) (int, error) {
+func (this *userStorage) insertUser(user entity.User) (int, error) {
 	var id int
 	query := `INSERT INTO "Users" ("Name", "Password") VALUES ($1, $2) RETURNING "Id"`
-	row := storage.database.QueryRow(query, &user.Name, &user.Key)
+	row := this.database.QueryRow(query, &user.Name, &user.Key)
 	if err := row.Scan(&id); err != nil {
 		log.Println(err.Error())
 		return 0, err
@@ -81,9 +81,9 @@ func (storage *userStorage) insertUser(user entity.User) (int, error) {
 	return id, nil
 }
 
-func (storage *userStorage) updateUserKey(user entity.User) error {
+func (this *userStorage) updateUserKey(user entity.User) error {
 	query := `UPDATE "Users" SET "Password" = $2 WHERE "Id" = $1`
-	if _, err := storage.database.Exec(query, &user.Id, &user.Key); err != nil {
+	if _, err := this.database.Exec(query, &user.Id, &user.Key); err != nil {
 		log.Println(err.Error())
 		return err
 	}

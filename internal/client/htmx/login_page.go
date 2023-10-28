@@ -2,21 +2,21 @@ package htmx
 
 import "net/http"
 
-func (client *Client) getLoginPage(response http.ResponseWriter, request *http.Request) {
-	isLoggedIn := client.app.IsLoggedIn(request)
+func (this *Client) getLoginPage(response http.ResponseWriter, request *http.Request) {
+	isLoggedIn := this.app.IsLoggedIn(request)
 	if isLoggedIn {
 		http.Redirect(response, request, "/htmx/todos", http.StatusSeeOther)
 		return
 	}
 
-	html := client.renderer.renderLoginPage()
+	html := this.renderer.renderLoginPage()
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
 	response.Write(html)
 }
 
-func (client *Client) loginUser(response http.ResponseWriter, request *http.Request) {
-	isLoggedIn := client.app.IsLoggedIn(request)
+func (this *Client) loginUser(response http.ResponseWriter, request *http.Request) {
+	isLoggedIn := this.app.IsLoggedIn(request)
 	if isLoggedIn {
 		response.WriteHeader(http.StatusBadRequest)
 		return
@@ -25,7 +25,7 @@ func (client *Client) loginUser(response http.ResponseWriter, request *http.Requ
 	name := request.FormValue("name")
 	password := request.FormValue("password")
 	renderError := func(message string) {
-		html := client.renderer.renderLoginForm(name, password, message)
+		html := this.renderer.renderLoginForm(name, password, message)
 		response.Header().Add("Content-type", "text/html; charset=utf-8")
 		response.WriteHeader(http.StatusOK)
 		response.Write(html)
@@ -41,7 +41,7 @@ func (client *Client) loginUser(response http.ResponseWriter, request *http.Requ
 		return
 	}
 
-	err := client.app.LoginUser(name, password, response)
+	err := this.app.LoginUser(name, password, response)
 	if err != nil {
 		renderError("Invalid credentials.")
 		return

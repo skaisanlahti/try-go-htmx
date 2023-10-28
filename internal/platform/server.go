@@ -29,30 +29,30 @@ func NewServer(address string, database *sql.DB) *server {
 	return &server{listener, router, database}
 }
 
-func (server *server) Run() {
+func (this *server) Run() {
 	exit := make(chan struct{})
-	go server.shutdown(exit)
-	err := server.ListenAndServe()
+	go this.shutdown(exit)
+	err := this.ListenAndServe()
 	if err != http.ErrServerClosed {
 		log.Fatalf("HTTP server ListenAndServe: %v", err)
 	}
 	<-exit
 }
 
-func (server *server) shutdown(exit chan struct{}) {
+func (this *server) shutdown(exit chan struct{}) {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt, os.Kill, syscall.SIGTERM, syscall.SIGINT)
 	<-interrupt
 
 	token, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	err := server.Shutdown(token)
+	err := this.Shutdown(token)
 	if err != nil {
 		log.Printf("HTTP server Shutdown: %v", err)
 	}
 
 	log.Println("Server closed.")
-	err = server.database.Close()
+	err = this.database.Close()
 	if err != nil {
 		log.Fatalf("Database shutdown error: %v", err)
 	}

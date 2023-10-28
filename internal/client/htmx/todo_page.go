@@ -8,34 +8,34 @@ import (
 	"strconv"
 )
 
-func (client *Client) getTodoPage(response http.ResponseWriter, request *http.Request) {
-	todos := client.app.FindTodos()
-	html := client.renderer.renderTodoPage(todos)
+func (this *Client) getTodoPage(response http.ResponseWriter, request *http.Request) {
+	todos := this.app.FindTodos()
+	html := this.renderer.renderTodoPage(todos)
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
 	response.Write(html)
 }
 
-func (service *Client) getTodoList(response http.ResponseWriter, request *http.Request) {
-	todos := service.app.FindTodos()
-	html := service.renderer.renderTodoList(todos)
+func (this *Client) getTodoList(response http.ResponseWriter, request *http.Request) {
+	todos := this.app.FindTodos()
+	html := this.renderer.renderTodoList(todos)
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
 	response.Write(html)
 }
 
-func (service *Client) addTodo(response http.ResponseWriter, request *http.Request) {
+func (this *Client) addTodo(response http.ResponseWriter, request *http.Request) {
 	task := request.FormValue("task")
-	err := service.app.AddTodo(task)
+	err := this.app.AddTodo(task)
 	if err != nil {
-		html := service.renderer.renderTodoForm(task, err.Error())
+		html := this.renderer.renderTodoForm(task, err.Error())
 		response.Header().Add("Content-type", "text/html; charset=utf-8")
 		response.WriteHeader(http.StatusOK)
 		response.Write(html)
 		return
 	}
 
-	html := service.renderer.renderTodoForm("", "")
+	html := this.renderer.renderTodoForm("", "")
 	response.Header().Add("HX-Trigger", "GetTodoList")
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
@@ -48,8 +48,7 @@ var (
 )
 
 func extractTodoId(url *url.URL) (int, error) {
-	values := url.Query()
-	maybeId := values.Get("id")
+	maybeId := url.Query().Get("id")
 	if maybeId == "" {
 		return 0, ErrTodoIdMissing
 	}
@@ -63,34 +62,34 @@ func extractTodoId(url *url.URL) (int, error) {
 	return id, nil
 }
 
-func (client *Client) toggleTodo(response http.ResponseWriter, request *http.Request) {
+func (this *Client) toggleTodo(response http.ResponseWriter, request *http.Request) {
 	id, err := extractTodoId(request.URL)
 	if err != nil {
 		response.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	err = client.app.ToggleTodo(id)
+	err = this.app.ToggleTodo(id)
 	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	todo, _ := client.app.FindTodo(id)
-	html := client.renderer.renderTodoItem(todo)
+	todo, _ := this.app.FindTodoById(id)
+	html := this.renderer.renderTodoItem(todo)
 	response.Header().Add("Content-type", "text/html; charset=utf-8")
 	response.WriteHeader(http.StatusOK)
 	response.Write(html)
 }
 
-func (service *Client) removeTodo(response http.ResponseWriter, request *http.Request) {
+func (this *Client) removeTodo(response http.ResponseWriter, request *http.Request) {
 	id, err := extractTodoId(request.URL)
 	if err != nil {
 		response.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	err = service.app.RemoveTodo(id)
+	err = this.app.RemoveTodo(id)
 	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		return

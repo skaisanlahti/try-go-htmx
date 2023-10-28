@@ -7,55 +7,55 @@ import (
 )
 
 type TodoService struct {
-	todos *todoStorage
+	storage *todoStorage
 }
 
 func NewTodoService(database *sql.DB) *TodoService {
 	return &TodoService{newTodoStorage(database)}
 }
 
-func (service *TodoService) FindTodos() []entity.Todo {
-	return service.todos.findTodos()
+func (this *TodoService) FindTodos() []entity.Todo {
+	return this.storage.findTodos()
 }
 
-func (service *TodoService) FindTodo(id int) (entity.Todo, error) {
-	return service.todos.findTodoById(id)
+func (this *TodoService) FindTodoById(id int) (entity.Todo, error) {
+	return this.storage.findTodoById(id)
 }
 
-func (service *TodoService) AddTodo(task string) error {
-	newTodo, err := entity.NewTodo(task)
+func (this *TodoService) AddTodo(task string) error {
+	newTodo := entity.NewTodo(task)
+	err := newTodo.Validate()
 	if err != nil {
 		return err
 	}
 
-	if err := service.todos.insertTodo(newTodo); err != nil {
+	if err := this.storage.insertTodo(newTodo); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (service *TodoService) ToggleTodo(todoId int) error {
-	todo, err := service.todos.findTodoById(todoId)
+func (this *TodoService) ToggleTodo(todoId int) error {
+	todo, err := this.storage.findTodoById(todoId)
 	if err != nil {
 		return err
 	}
 
-	todo.Done = !todo.Done
-	if err := service.todos.updateTodo(todo); err != nil {
+	if err := this.storage.updateTodo(todo.Toggle()); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (service *TodoService) RemoveTodo(todoId int) error {
-	_, err := service.todos.findTodoById(todoId)
+func (this *TodoService) RemoveTodo(todoId int) error {
+	_, err := this.storage.findTodoById(todoId)
 	if err != nil {
 		return err
 	}
 
-	if err := service.todos.deleteTodo(todoId); err != nil {
+	if err := this.storage.deleteTodo(todoId); err != nil {
 		return err
 	}
 
