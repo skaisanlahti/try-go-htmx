@@ -25,7 +25,7 @@ func newUserService(storage *userStorage, password *passwordHasher) *userService
 
 var ErrUserAlreadyExists = errors.New("Username already exists.")
 
-func (this *userService) newUser(name string, password string) (int, error) {
+func (this *userService) addUser(name string, password string) (int, error) {
 	nameExists := this.storage.userExists(name)
 	if nameExists {
 		return 0, ErrUserAlreadyExists

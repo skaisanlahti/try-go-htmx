@@ -16,7 +16,7 @@ func (recorder *responseRecorder) WriteHeader(code int) {
 	recorder.ResponseWriter.WriteHeader(code)
 }
 
-func (this *Client) logRequest() func(http.HandlerFunc) http.HandlerFunc {
+func (this *controller) logRequest() func(http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(response http.ResponseWriter, request *http.Request) {
 			start := time.Now()
@@ -34,10 +34,10 @@ func (this *Client) logRequest() func(http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func (this *Client) requireSession(redirectUrl string) func(http.HandlerFunc) http.HandlerFunc {
+func (this *controller) requireSession(redirectUrl string) func(http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(response http.ResponseWriter, request *http.Request) {
-			err := this.app.VerifySession(response, request)
+			err := this.model.VerifySession(response, request)
 			if err != nil {
 				if request.Header.Get("HX-Request") == "true" {
 					response.Header().Add("HX-Location", redirectUrl)

@@ -4,9 +4,7 @@ import (
 	"bytes"
 	"embed"
 	"html/template"
-	"io/fs"
 	"log"
-	"net/http"
 	"time"
 
 	"github.com/skaisanlahti/try-go-htmx/internal/entity"
@@ -15,36 +13,19 @@ import (
 //go:embed web/html/*.html
 var templateFiles embed.FS
 
-//go:embed web/dist/*
-var assetFiles embed.FS
-
-const (
-	assetFilesRoot = "web/dist"
-	assetPath      = "/dist/"
-)
-
-func useAssets(router *http.ServeMux) {
-	assets, err := fs.Sub(assetFiles, assetFilesRoot)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	router.Handle(assetPath, http.StripPrefix(assetPath, http.FileServer(http.FS(assets))))
-}
-
-type renderer struct {
+type view struct {
 	loginPage    *template.Template
 	logoutPage   *template.Template
 	registerPage *template.Template
 	todoPage     *template.Template
 }
 
-func newRenderer() *renderer {
-	loginPage := template.Must(template.ParseFS(templateFiles, "web/html/login_page.html"))
-	logoutPage := template.Must(template.ParseFS(templateFiles, "web/html/logout_page.html"))
-	registerPage := template.Must(template.ParseFS(templateFiles, "web/html/register_page.html"))
-	todoPage := template.Must(template.ParseFS(templateFiles, "web/html/todo_page.html"))
-	return &renderer{loginPage, logoutPage, registerPage, todoPage}
+func newView() *view {
+	loginPage := template.Must(template.ParseFS(templateFiles, "web/html/page.html", "web/html/login_page.html"))
+	logoutPage := template.Must(template.ParseFS(templateFiles, "web/html/page.html", "web/html/logout_page.html"))
+	registerPage := template.Must(template.ParseFS(templateFiles, "web/html/page.html", "web/html/register_page.html"))
+	todoPage := template.Must(template.ParseFS(templateFiles, "web/html/page.html", "web/html/todo_page.html"))
+	return &view{loginPage, logoutPage, registerPage, todoPage}
 }
 
 type registerPageData struct {
@@ -54,10 +35,10 @@ type registerPageData struct {
 	Error    string
 }
 
-func (this *renderer) renderRegisterPage() []byte {
+func (this *view) renderRegisterPage() []byte {
 	data := registerPageData{Key: time.Now().UnixMilli()}
 	buffer := &bytes.Buffer{}
-	err := this.registerPage.Execute(buffer, data)
+	err := this.registerPage.ExecuteTemplate(buffer, "page", data)
 	if err != nil {
 		log.Panicln(err.Error())
 	}
@@ -65,7 +46,7 @@ func (this *renderer) renderRegisterPage() []byte {
 	return buffer.Bytes()
 }
 
-func (this *renderer) renderRegisterForm(name string, password string, errorMessage string) []byte {
+func (this *view) renderRegisterForm(name string, password string, errorMessage string) []byte {
 	data := registerPageData{Key: time.Now().UnixMilli(), Name: name, Password: password, Error: errorMessage}
 	buffer := &bytes.Buffer{}
 	err := this.registerPage.ExecuteTemplate(buffer, "form", data)
@@ -83,10 +64,10 @@ type loginPageData struct {
 	Error    string
 }
 
-func (this *renderer) renderLoginPage() []byte {
+func (this *view) renderLoginPage() []byte {
 	data := loginPageData{Key: time.Now().UnixMilli()}
 	buffer := &bytes.Buffer{}
-	err := this.loginPage.Execute(buffer, data)
+	err := this.loginPage.ExecuteTemplate(buffer, "page", data)
 	if err != nil {
 		log.Panicln(err.Error())
 	}
@@ -94,7 +75,7 @@ func (this *renderer) renderLoginPage() []byte {
 	return buffer.Bytes()
 }
 
-func (this *renderer) renderLoginForm(name string, password string, errorMessage string) []byte {
+func (this *view) renderLoginForm(name string, password string, errorMessage string) []byte {
 	data := loginPageData{Key: time.Now().UnixMilli(), Name: name, Password: password, Error: errorMessage}
 	buffer := &bytes.Buffer{}
 	err := this.loginPage.ExecuteTemplate(buffer, "form", data)
@@ -109,10 +90,10 @@ type logoutPageData struct {
 	LoggedIn bool
 }
 
-func (this *renderer) renderLogoutPage(loggedIn bool) []byte {
+func (this *view) renderLogoutPage(loggedIn bool) []byte {
 	data := logoutPageData{loggedIn}
 	buffer := &bytes.Buffer{}
-	err := this.logoutPage.Execute(buffer, data)
+	err := this.logoutPage.ExecuteTemplate(buffer, "page", data)
 	if err != nil {
 		log.Panicln(err.Error())
 	}
@@ -127,14 +108,14 @@ type todoPageData struct {
 	Error string
 }
 
-func (this *renderer) renderTodoPage(todos []entity.Todo) []byte {
+func (this *view) renderTodoPage(todos []entity.Todo) []byte {
 	data := todoPageData{
 		Key:   time.Now().UnixMilli(),
 		Todos: todos,
 	}
 
 	buffer := &bytes.Buffer{}
-	err := this.todoPage.Execute(buffer, data)
+	err := this.todoPage.ExecuteTemplate(buffer, "page", data)
 	if err != nil {
 		log.Panicln(err.Error())
 	}
@@ -142,7 +123,7 @@ func (this *renderer) renderTodoPage(todos []entity.Todo) []byte {
 	return buffer.Bytes()
 }
 
-func (this *renderer) renderTodoForm(task string, errorMessage string) []byte {
+func (this *view) renderTodoForm(task string, errorMessage string) []byte {
 	data := todoPageData{
 		Key:   time.Now().UnixMilli(),
 		Task:  task,
@@ -158,7 +139,7 @@ func (this *renderer) renderTodoForm(task string, errorMessage string) []byte {
 	return buffer.Bytes()
 }
 
-func (this *renderer) renderTodoList(todos []entity.Todo) []byte {
+func (this *view) renderTodoList(todos []entity.Todo) []byte {
 	data := todoPageData{Todos: todos}
 	buffer := &bytes.Buffer{}
 	err := this.todoPage.ExecuteTemplate(buffer, "list", data)
@@ -169,7 +150,7 @@ func (this *renderer) renderTodoList(todos []entity.Todo) []byte {
 	return buffer.Bytes()
 }
 
-func (this *renderer) renderTodoItem(todo entity.Todo) []byte {
+func (this *view) renderTodoItem(todo entity.Todo) []byte {
 	buffer := &bytes.Buffer{}
 	err := this.todoPage.ExecuteTemplate(buffer, "item", todo)
 	if err != nil {

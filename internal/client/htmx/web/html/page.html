@@ -1,0 +1,22 @@
+{{ define "page" }}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/x-icon" href="/dist/favicon.ico" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css"
+    />
+    <link rel="stylesheet" href="/htmx/dist/css/styles.css" />
+    <title>{{ template "title" . }} - htmx</title>
+  </head>
+  <body>
+    <main id="page" class="container" hx-boost="true">
+      {{ template "main" . }}
+    </main>
+    <script type="module" src="/htmx/dist/js/index.js"></script>
+  </body>
+</html>
+{{ end }}

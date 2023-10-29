@@ -11,6 +11,7 @@ import (
 )
 
 func main() {
+	// platform
 	settings := platform.ReadSettings("appsettings.json")
 	database := platform.OpenDatabase(platform.DatabaseOptions{
 		Driver:             "pgx",
@@ -20,6 +21,8 @@ func main() {
 	})
 
 	server := platform.NewServer(settings.Address, database)
+
+	// services
 	passwordOptions := security.PasswordOptions{
 		Time:                settings.Password.Time,
 		Memory:              settings.Password.Memory,
@@ -38,6 +41,10 @@ func main() {
 
 	security := security.NewSecurityService(database, passwordOptions, sessionOptions)
 	todo := todo.NewTodoService(database)
+
+	// clients
 	htmx.NewClient(security, todo, server.Router)
+
+	// start
 	server.Run()
 }

@@ -7,32 +7,27 @@ import (
 	"github.com/skaisanlahti/try-go-htmx/internal/todo"
 )
 
-type Client struct {
-	app      *application
-	renderer *renderer
-}
-
 func NewClient(security *security.SecurityService, todo *todo.TodoService, router *http.ServeMux) {
-	client := &Client{&application{security, todo}, newRenderer()}
-	log := client.logRequest()
-	private := client.requireSession("/htmx/login")
+	controller := newController(security, todo)
+	log := controller.logRequest()
+	private := controller.requireSession("/htmx/login")
 
-	useAssets(router)
+	router.HandleFunc(assetPath, controller.getAssets)
 
-	router.HandleFunc("/htmx/register", log(client.getRegisterPage))
-	router.HandleFunc("/htmx/api/register", log(client.registerUser))
+	router.HandleFunc("/htmx/register", log(controller.getRegisterPage))
+	router.HandleFunc("/htmx/api/register", log(controller.registerUser))
 
-	router.HandleFunc("/htmx/login", log(client.getLoginPage))
-	router.HandleFunc("/htmx/api/login", log(client.loginUser))
+	router.HandleFunc("/htmx/login", log(controller.getLoginPage))
+	router.HandleFunc("/htmx/api/login", log(controller.loginUser))
 
-	router.HandleFunc("/htmx/logout", log(client.getLogoutPage))
-	router.HandleFunc("/htmx/api/logout", log(private(client.logoutUser)))
+	router.HandleFunc("/htmx/logout", log(controller.getLogoutPage))
+	router.HandleFunc("/htmx/api/logout", log(private(controller.logoutUser)))
 
-	router.HandleFunc("/htmx/todos", log(private(client.getTodoPage)))
-	router.HandleFunc("/htmx/api/todos/list", log(private(client.getTodoList)))
-	router.HandleFunc("/htmx/api/todos/add", log(private(client.addTodo)))
-	router.HandleFunc("/htmx/api/todos/toggle", log(private(client.toggleTodo)))
-	router.HandleFunc("/htmx/api/todos/remove", log(private(client.removeTodo)))
+	router.HandleFunc("/htmx/todos", log(private(controller.getTodoPage)))
+	router.HandleFunc("/htmx/api/todos/list", log(private(controller.getTodoList)))
+	router.HandleFunc("/htmx/api/todos/add", log(private(controller.addTodo)))
+	router.HandleFunc("/htmx/api/todos/toggle", log(private(controller.toggleTodo)))
+	router.HandleFunc("/htmx/api/todos/remove", log(private(controller.removeTodo)))
 	router.HandleFunc("/", func(response http.ResponseWriter, request *http.Request) {
 		http.Redirect(response, request, "/htmx/todos", http.StatusSeeOther)
 	})

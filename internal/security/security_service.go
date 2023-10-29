@@ -22,7 +22,7 @@ func NewSecurityService(
 }
 
 func (this *SecurityService) RegisterUser(name string, password string, response http.ResponseWriter) error {
-	userId, err := this.user.newUser(name, password)
+	userId, err := this.user.addUser(name, password)
 	if err != nil {
 		return err
 	}
