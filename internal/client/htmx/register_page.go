@@ -1,26 +1,43 @@
 package htmx
 
 import (
+	"html/template"
 	"net/http"
 
 	"github.com/skaisanlahti/try-go-htmx/internal/security"
 )
 
-func (this *controller) getRegisterPage(response http.ResponseWriter, request *http.Request) {
-	isLoggedIn := this.model.IsLoggedIn(request)
+type registerPageData struct {
+	Key      int64
+	Name     string
+	Password string
+	Error    string
+}
+
+type registerPageController struct {
+	security *security.SecurityService
+	*defaultRenderer
+}
+
+func newRegisterPageController(security *security.SecurityService) *registerPageController {
+	registerPage := template.Must(template.ParseFS(templateFiles, "web/html/page.html", "web/html/register_page.html"))
+	return &registerPageController{security, newDefaultRenderer(registerPage)}
+}
+
+func (this *registerPageController) page(response http.ResponseWriter, request *http.Request) {
+	isLoggedIn := this.security.IsLoggedIn(request)
 	if isLoggedIn {
 		http.Redirect(response, request, "/htmx/todos", http.StatusSeeOther)
 		return
 	}
 
-	html := this.view.renderRegisterPage()
-	response.Header().Add("Content-type", "text/html; charset=utf-8")
-	response.WriteHeader(http.StatusOK)
-	response.Write(html)
+	this.render(response, "page", registerPageData{
+		Key: newRenderKey(),
+	}, nil)
 }
 
-func (this *controller) registerUser(response http.ResponseWriter, request *http.Request) {
-	isLoggedIn := this.model.IsLoggedIn(request)
+func (this *registerPageController) registerUser(response http.ResponseWriter, request *http.Request) {
+	isLoggedIn := this.security.IsLoggedIn(request)
 	if isLoggedIn {
 		response.WriteHeader(http.StatusBadRequest)
 		return
@@ -28,11 +45,13 @@ func (this *controller) registerUser(response http.ResponseWriter, request *http
 
 	name := request.FormValue("name")
 	password := request.FormValue("password")
-	renderError := func(message string) {
-		html := this.view.renderRegisterForm(name, password, message)
-		response.Header().Add("Content-type", "text/html; charset=utf-8")
-		response.WriteHeader(http.StatusOK)
-		response.Write(html)
+	renderError := func(errorMessage string) {
+		this.render(response, "form", registerPageData{
+			Key:      newRenderKey(),
+			Name:     name,
+			Password: password,
+			Error:    errorMessage,
+		}, nil)
 	}
 
 	if name == "" {
@@ -45,7 +64,7 @@ func (this *controller) registerUser(response http.ResponseWriter, request *http
 		return
 	}
 
-	err := this.model.RegisterUser(name, password, response)
+	err := this.security.RegisterUser(name, password, response)
 	if err == security.ErrUserAlreadyExists {
 		renderError(err.Error())
 		return

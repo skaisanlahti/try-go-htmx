@@ -13,14 +13,14 @@ type userService struct {
 	fake    entity.User
 }
 
-func newUserService(storage *userStorage, password *passwordHasher) *userService {
-	fakeKey, err := password.hash("password")
+func newUserService(storage *userStorage, hasher *passwordHasher) *userService {
+	fakeKey, err := hasher.hash("password")
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
 
 	fakeUser := entity.NewUser("username", fakeKey)
-	return &userService{storage, password, fakeUser}
+	return &userService{storage, hasher, fakeUser}
 }
 
 var ErrUserAlreadyExists = errors.New("Username already exists.")

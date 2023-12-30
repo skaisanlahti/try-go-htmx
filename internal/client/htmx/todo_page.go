@@ -2,44 +2,118 @@ package htmx
 
 import (
 	"errors"
+	"html/template"
 	"log"
 	"net/http"
 	"net/url"
 	"strconv"
+
+	"github.com/skaisanlahti/try-go-htmx/internal/entity"
+	"github.com/skaisanlahti/try-go-htmx/internal/todo"
 )
 
-func (this *controller) getTodoPage(response http.ResponseWriter, request *http.Request) {
-	todos := this.model.FindTodos()
-	html := this.view.renderTodoPage(todos)
-	response.Header().Add("Content-type", "text/html; charset=utf-8")
-	response.WriteHeader(http.StatusOK)
-	response.Write(html)
+type todoPageData struct {
+	Key          int64
+	TodoListId   int
+	TodoListName string
+	Task         string
+	Todos        []entity.Todo
+	Error        string
 }
 
-func (this *controller) getTodoList(response http.ResponseWriter, request *http.Request) {
-	todos := this.model.FindTodos()
-	html := this.view.renderTodoList(todos)
-	response.Header().Add("Content-type", "text/html; charset=utf-8")
-	response.WriteHeader(http.StatusOK)
-	response.Write(html)
+type todoPageController struct {
+	todo *todo.TodoService
+	*defaultRenderer
 }
 
-func (this *controller) addTodo(response http.ResponseWriter, request *http.Request) {
-	task := request.FormValue("task")
-	err := this.model.AddTodo(task)
+func newTodoPageController(todo *todo.TodoService) *todoPageController {
+	todoPageTemplate := template.Must(template.ParseFS(templateFiles, "web/html/page.html", "web/html/todo_page.html"))
+	return &todoPageController{todo, newDefaultRenderer(todoPageTemplate)}
+}
+
+var (
+	ErrListIdMissing   = errors.New("List id not found in query.")
+	ErrListIdNotNumber = errors.New("List id not a number.")
+)
+
+func extractListId(url *url.URL) (int, error) {
+	maybeId := url.Query().Get("listid")
+	if maybeId == "" {
+		return 0, ErrListIdMissing
+	}
+
+	id, err := strconv.Atoi(maybeId)
 	if err != nil {
-		html := this.view.renderTodoForm(task, err.Error())
-		response.Header().Add("Content-type", "text/html; charset=utf-8")
-		response.WriteHeader(http.StatusOK)
-		response.Write(html)
+		log.Println(err.Error())
+		return 0, ErrListIdNotNumber
+	}
+
+	return id, nil
+}
+
+func (this *todoPageController) page(response http.ResponseWriter, request *http.Request) {
+	listId, err := extractListId(request.URL)
+	if err != nil {
+		log.Println(err.Error())
+		http.Redirect(response, request, "/htmx/todo-lists", http.StatusSeeOther)
 		return
 	}
 
-	html := this.view.renderTodoForm("", "")
-	response.Header().Add("HX-Trigger", "GetTodoList")
-	response.Header().Add("Content-type", "text/html; charset=utf-8")
-	response.WriteHeader(http.StatusOK)
-	response.Write(html)
+	list, err := this.todo.FindListById(listId)
+	if err != nil {
+		log.Println(err.Error())
+		http.Redirect(response, request, "/htmx/todo-lists", http.StatusSeeOther)
+		return
+	}
+
+	this.render(response, "page", todoPageData{
+		Key:          newRenderKey(),
+		TodoListId:   listId,
+		TodoListName: list.Name,
+		Todos:        this.todo.FindTodosByListId(listId),
+	}, nil)
+
+}
+
+func (this *todoPageController) todos(response http.ResponseWriter, request *http.Request) {
+	listId, err := extractListId(request.URL)
+	if err != nil {
+		http.Error(response, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	this.render(response, "list", todoPageData{
+		TodoListId: listId,
+		Todos:      this.todo.FindTodosByListId(listId),
+	}, nil)
+
+}
+
+func (this *todoPageController) addTodo(response http.ResponseWriter, request *http.Request) {
+	task := request.FormValue("task")
+	maybeListId := request.FormValue("listId")
+	listId, err := strconv.Atoi(maybeListId)
+	if err != nil {
+		http.Error(response, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if _, err = this.todo.AddTodo(task, listId); err != nil {
+		this.render(response, "form", todoPageData{
+			Key:   newRenderKey(),
+			TodoListId: listId,
+			Task:  task,
+			Error: err.Error(),
+		}, nil)
+		return
+	}
+
+	this.render(response, "form", todoPageData{
+		Key: newRenderKey(),
+		TodoListId: listId,
+	}, extraHeaders{
+		"HX-Trigger": "GetTodos",
+	})
 }
 
 var (
@@ -62,36 +136,31 @@ func extractTodoId(url *url.URL) (int, error) {
 	return id, nil
 }
 
-func (this *controller) toggleTodo(response http.ResponseWriter, request *http.Request) {
+func (this *todoPageController) toggleTodo(response http.ResponseWriter, request *http.Request) {
 	id, err := extractTodoId(request.URL)
 	if err != nil {
-		response.WriteHeader(http.StatusBadRequest)
+		http.Error(response, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err = this.model.ToggleTodo(id)
+	todo, err := this.todo.ToggleTodo(id)
 	if err != nil {
-		response.WriteHeader(http.StatusInternalServerError)
+		http.Error(response, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	todo, _ := this.model.FindTodoById(id)
-	html := this.view.renderTodoItem(todo)
-	response.Header().Add("Content-type", "text/html; charset=utf-8")
-	response.WriteHeader(http.StatusOK)
-	response.Write(html)
+	this.render(response, "item", todo, nil)
 }
 
-func (this *controller) removeTodo(response http.ResponseWriter, request *http.Request) {
+func (this *todoPageController) removeTodo(response http.ResponseWriter, request *http.Request) {
 	id, err := extractTodoId(request.URL)
 	if err != nil {
-		response.WriteHeader(http.StatusBadRequest)
+		http.Error(response, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err = this.model.RemoveTodo(id)
-	if err != nil {
-		response.WriteHeader(http.StatusInternalServerError)
+	if _, err = this.todo.RemoveTodo(id); err != nil {
+		http.Error(response, err.Error(), http.StatusInternalServerError)
 		return
 	}
 

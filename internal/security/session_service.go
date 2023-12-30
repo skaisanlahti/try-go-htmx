@@ -21,12 +21,12 @@ type SessionOptions struct {
 }
 
 type sessionService struct {
-	options SessionOptions
 	storage *sessionStorage
+	options SessionOptions
 }
 
-func newSessionService(options SessionOptions, storage *sessionStorage) *sessionService {
-	return &sessionService{options, storage}
+func newSessionService(storage *sessionStorage, options SessionOptions) *sessionService {
+	return &sessionService{storage, options}
 }
 
 func NewSessionSecret(length uint32) string {
@@ -39,40 +39,41 @@ func NewSessionSecret(length uint32) string {
 	return base64.StdEncoding.EncodeToString(bytes)
 }
 
-func (this *sessionService) verifySession(response http.ResponseWriter, request *http.Request) error {
+func (this *sessionService) verifySession(response http.ResponseWriter, request *http.Request) (entity.Session, error) {
+	var session entity.Session
 	cookie, err := request.Cookie(this.options.CookieName)
 	if err != nil {
-		return err
+		return session, err
 	}
 
 	sessionId, err := this.verifySignature(cookie.Value)
 	if err != nil {
-		return err
+		return session, err
 	}
 
-	session, err := this.storage.findSessionBySessionId(sessionId)
+	session, err = this.storage.findSessionBySessionId(sessionId)
 	if err != nil {
-		return err
+		return session, err
 	}
 
 	if session.Expires.Before(time.Now()) {
 		this.storage.deleteSession(session)
-		return errors.New("Session has expired.")
+		return session, errors.New("Session has expired.")
 	}
 
 	err = this.storage.updateSession(session.Extend(this.options.Duration))
 	if err != nil {
-		return err
+		return session, err
 	}
 
 	signedSession, err := this.newSignature(session.Id)
 	if err != nil {
-		return err
+		return session, err
 	}
 
 	newCookie := this.newSessionCookie(signedSession)
 	http.SetCookie(response, newCookie)
-	return nil
+	return session, nil
 }
 
 func (this *sessionService) sessionExists(request *http.Request) bool {

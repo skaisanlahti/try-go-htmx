@@ -14,6 +14,11 @@
   </head>
   <body>
     <main id="page" class="container" hx-boost="true">
+      <!-- nav -->
+      {{ block "nav" . }}
+      <nav class="nav"></nav>
+      {{ end }}
+      <!-- main -->
       {{ template "main" . }}
     </main>
     <script type="module" src="/htmx/dist/js/index.js"></script>

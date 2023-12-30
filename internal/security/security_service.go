@@ -3,6 +3,8 @@ package security
 import (
 	"database/sql"
 	"net/http"
+
+	"github.com/skaisanlahti/try-go-htmx/internal/entity"
 )
 
 type SecurityService struct {
@@ -16,7 +18,7 @@ func NewSecurityService(
 	sessionOptions SessionOptions,
 ) *SecurityService {
 	return &SecurityService{
-		session: newSessionService(sessionOptions, newSessionStorage()),
+		session: newSessionService(newSessionStorage(), sessionOptions),
 		user:    newUserService(newUserStorage(database), newPasswordHasher(passwordOptions)),
 	}
 }
@@ -67,11 +69,16 @@ func (this *SecurityService) IsLoggedIn(request *http.Request) bool {
 	return true
 }
 
-func (this *SecurityService) VerifySession(response http.ResponseWriter, request *http.Request) error {
-	err := this.session.verifySession(response, request)
+func (this *SecurityService) VerifySession(response http.ResponseWriter, request *http.Request) (entity.User, error) {
+	var user entity.User
+	session, err := this.session.verifySession(response, request)
 	if err != nil {
-		return err
+		return user, err
+	}
+	user, err = this.user.storage.findUserById(session.UserId)
+	if err != nil {
+		return user, err
 	}
 
-	return nil
+	return user, nil
 }

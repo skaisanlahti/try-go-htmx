@@ -7,6 +7,9 @@ import (
 	"net/http"
 )
 
+//go:embed web/html/*.html
+var templateFiles embed.FS
+
 //go:embed web/dist/*
 var assetFiles embed.FS
 
@@ -15,7 +18,7 @@ const (
 	assetPath      = "/htmx/dist/" // Asset path in request URL. Used in HTML templates as prefix for the asset files.
 )
 
-func (this *controller) getAssets(response http.ResponseWriter, request *http.Request) {
+func newAssetHandler() http.Handler {
 	// strip the file system path from assets
 	assets, err := fs.Sub(assetFiles, assetFilesRoot)
 	if err != nil {
@@ -23,5 +26,5 @@ func (this *controller) getAssets(response http.ResponseWriter, request *http.Re
 	}
 
 	// strip request url from assets so that requests are properly mapped to the file system
-	http.StripPrefix(assetPath, http.FileServer(http.FS(assets))).ServeHTTP(response, request)
+	return http.StripPrefix(assetPath, http.FileServer(http.FS(assets)))
 }

@@ -1,9 +1,17 @@
-{{ define "title" }}Todos{{ end }} {{ define "main" }}
-<div class="logout">
+<!-- title -->
+{{ define "title" }}Todos{{ end }}
+<!-- title end -->
+{{ define "nav" }}
+<nav class="nav">
+  <a href="/htmx/todo-lists">Todo lists</a>
   <a href="#" hx-delete="/htmx/api/logout">Logout</a>
-</div>
-<h1>Todo list</h1>
+</nav>
+{{ end }}
+<!-- main -->
+{{ define "main" }}
+<h1>Todo list: {{ .TodoListName }}</h1>
 <!-- .Key as name attribute required to stop firefox from preserving values through page refresh -->
+<!-- main.form -->
 {{ block "form" . }}
 <form
   id="todo-form"
@@ -12,6 +20,7 @@
   hx-target="#todo-form"
   hx-swap="outerHTML"
 >
+  <input hidden type="number" name="listId" value="{{ .TodoListId }}" />
   <input
     type="text"
     name="task"
@@ -21,17 +30,24 @@
   <p>{{ .Error }}</p>
   <button type="submit">Add Task</button>
 </form>
-{{ end }} {{ block "list" . }}
+{{ end }}
+<!-- main.form end -->
+<!-- main.list -->
+{{ block "list" . }}
 <div
   class="container"
   id="todos"
-  hx-get="/htmx/api/todos/list"
-  hx-trigger="GetTodoList from:body"
+  hx-get="/htmx/api/todos/list?listid={{ .TodoListId }}"
+  hx-trigger="GetTodos from:body"
   hx-swap="outerHTML swap:500ms"
 >
-  {{ range .Todos }} {{ block "item" . }}
+  <!-- main.list.range -->
+  {{ range .Todos }}
+  <!-- main.list.range.item -->
+  {{ block "item" . }}
   <div id="item-{{ .Id }}" class="todo_item {{ if .Done }}removable{{ end }}">
     <span class="todo_item-task">{{ .Task }}</span>
+    <!-- main.list.range.item.if -->
     {{ if .Done }}
     <button
       role="button"
@@ -63,7 +79,14 @@
     </button>
     <button disabled role="button" class="secondary outline">Remove</button>
     {{ end }}
+    <!-- main.list.range.item.if end -->
   </div>
-  {{ end }} {{ end }}
+  {{ end }}
+  <!-- main.list.range.item end -->
+  {{ end }}
+  <!-- main.list.range end -->
 </div>
-{{ end }} {{ end }}
+{{ end }}
+<!-- main.list end -->
+{{ end }}
+<!-- main end -->

@@ -7,28 +7,37 @@ import (
 	"github.com/skaisanlahti/try-go-htmx/internal/todo"
 )
 
-func NewClient(security *security.SecurityService, todo *todo.TodoService, router *http.ServeMux) {
-	controller := newController(security, todo)
-	log := controller.logRequest()
-	private := controller.requireSession("/htmx/login")
+func NewClient(securityService *security.SecurityService, todoService *todo.TodoService, router *http.ServeMux) {
+	log := newRequestLogger()
+	private := newSessionGuard(securityService, "/htmx/login")
+	router.Handle(assetPath, newAssetHandler())
 
-	router.HandleFunc(assetPath, controller.getAssets)
+	registerPageController := newRegisterPageController(securityService)
+	router.HandleFunc("/htmx/register", log(registerPageController.page))
+	router.HandleFunc("/htmx/api/register", log(registerPageController.registerUser))
 
-	router.HandleFunc("/htmx/register", log(controller.getRegisterPage))
-	router.HandleFunc("/htmx/api/register", log(controller.registerUser))
+	loginPageController := newLoginPageController(securityService)
+	router.HandleFunc("/htmx/login", log(loginPageController.page))
+	router.HandleFunc("/htmx/api/login", log(loginPageController.loginUser))
 
-	router.HandleFunc("/htmx/login", log(controller.getLoginPage))
-	router.HandleFunc("/htmx/api/login", log(controller.loginUser))
+	logoutPageController := newLogoutPageController(securityService)
+	router.HandleFunc("/htmx/logout", log(logoutPageController.page))
+	router.HandleFunc("/htmx/api/logout", log(private(logoutPageController.logoutUser)))
 
-	router.HandleFunc("/htmx/logout", log(controller.getLogoutPage))
-	router.HandleFunc("/htmx/api/logout", log(private(controller.logoutUser)))
+	todoListPageController := newTodoListPageController(todoService)
+	router.HandleFunc("/htmx/todo-lists", log(private(todoListPageController.page)))
+	router.HandleFunc("/htmx/api/todo-lists/list", log(private(todoListPageController.lists)))
+	router.HandleFunc("/htmx/api/todo-lists/add", log(private(todoListPageController.addList)))
+	router.HandleFunc("/htmx/api/todo-lists/remove", log(private(todoListPageController.removeList)))
 
-	router.HandleFunc("/htmx/todos", log(private(controller.getTodoPage)))
-	router.HandleFunc("/htmx/api/todos/list", log(private(controller.getTodoList)))
-	router.HandleFunc("/htmx/api/todos/add", log(private(controller.addTodo)))
-	router.HandleFunc("/htmx/api/todos/toggle", log(private(controller.toggleTodo)))
-	router.HandleFunc("/htmx/api/todos/remove", log(private(controller.removeTodo)))
+	todoPageController := newTodoPageController(todoService)
+	router.HandleFunc("/htmx/todos", log(private(todoPageController.page)))
+	router.HandleFunc("/htmx/api/todos/list", log(private(todoPageController.todos)))
+	router.HandleFunc("/htmx/api/todos/add", log(private(todoPageController.addTodo)))
+	router.HandleFunc("/htmx/api/todos/toggle", log(private(todoPageController.toggleTodo)))
+	router.HandleFunc("/htmx/api/todos/remove", log(private(todoPageController.removeTodo)))
+
 	router.HandleFunc("/", func(response http.ResponseWriter, request *http.Request) {
-		http.Redirect(response, request, "/htmx/todos", http.StatusSeeOther)
+		http.Redirect(response, request, "/htmx/todo-lists", http.StatusSeeOther)
 	})
 }

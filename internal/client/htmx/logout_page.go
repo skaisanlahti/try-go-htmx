@@ -1,19 +1,36 @@
 package htmx
 
-import "net/http"
+import (
+	"html/template"
+	"net/http"
 
-func (this *controller) getLogoutPage(response http.ResponseWriter, request *http.Request) {
-	loggedIn := this.model.IsLoggedIn(request)
-	html := this.view.renderLogoutPage(loggedIn)
-	response.Header().Add("Content-type", "text/html; charset=utf-8")
-	response.WriteHeader(http.StatusOK)
-	response.Write(html)
+	"github.com/skaisanlahti/try-go-htmx/internal/security"
+)
+
+type logoutPageData struct {
+	LoggedIn bool
 }
 
-func (this *controller) logoutUser(response http.ResponseWriter, request *http.Request) {
-	err := this.model.LogoutUser(response, request)
+type logoutPageController struct {
+	security *security.SecurityService
+	*defaultRenderer
+}
+
+func newLogoutPageController(security *security.SecurityService) *logoutPageController {
+	logoutPage := template.Must(template.ParseFS(templateFiles, "web/html/page.html", "web/html/logout_page.html"))
+	return &logoutPageController{security, newDefaultRenderer(logoutPage)}
+}
+
+func (this *logoutPageController) page(response http.ResponseWriter, request *http.Request) {
+	this.render(response, "page", logoutPageData{
+		LoggedIn: this.security.IsLoggedIn(request),
+	}, nil)
+}
+
+func (this *logoutPageController) logoutUser(response http.ResponseWriter, request *http.Request) {
+	err := this.security.LogoutUser(response, request)
 	if err != nil {
-		response.WriteHeader(http.StatusBadRequest)
+		http.Error(response, err.Error(), http.StatusBadRequest)
 		return
 	}
 

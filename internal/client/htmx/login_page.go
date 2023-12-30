@@ -1,34 +1,58 @@
 package htmx
 
-import "net/http"
+import (
+	"html/template"
+	"net/http"
 
-func (this *controller) getLoginPage(response http.ResponseWriter, request *http.Request) {
-	isLoggedIn := this.model.IsLoggedIn(request)
+	"github.com/skaisanlahti/try-go-htmx/internal/security"
+)
+
+type loginPageData struct {
+	Key      int64
+	Name     string
+	Password string
+	Error    string
+}
+
+type loginPageController struct {
+	security *security.SecurityService
+	*defaultRenderer
+}
+
+func newLoginPageController(security *security.SecurityService) *loginPageController {
+	loginPage := template.Must(template.ParseFS(templateFiles, "web/html/page.html", "web/html/login_page.html"))
+	return &loginPageController{security, newDefaultRenderer(loginPage)}
+}
+
+func (this *loginPageController) page(response http.ResponseWriter, request *http.Request) {
+	isLoggedIn := this.security.IsLoggedIn(request)
 	if isLoggedIn {
 		http.Redirect(response, request, "/htmx/todos", http.StatusSeeOther)
 		return
 	}
 
-	html := this.view.renderLoginPage()
-	response.Header().Add("Content-type", "text/html; charset=utf-8")
-	response.WriteHeader(http.StatusOK)
-	response.Write(html)
+	this.render(response, "page", loginPageData{
+		Key: newRenderKey(),
+	}, nil)
 }
 
-func (this *controller) loginUser(response http.ResponseWriter, request *http.Request) {
-	isLoggedIn := this.model.IsLoggedIn(request)
+func (this *loginPageController) loginUser(response http.ResponseWriter, request *http.Request) {
+	isLoggedIn := this.security.IsLoggedIn(request)
 	if isLoggedIn {
 		response.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
+	response.Header().Add("HX-Location", "/htmx/todos")
 	name := request.FormValue("name")
 	password := request.FormValue("password")
-	renderError := func(message string) {
-		html := this.view.renderLoginForm(name, password, message)
-		response.Header().Add("Content-type", "text/html; charset=utf-8")
-		response.WriteHeader(http.StatusOK)
-		response.Write(html)
+	renderError := func(errorMessage string) {
+		this.render(response, "form", loginPageData{
+			Key:      newRenderKey(),
+			Name:     name,
+			Password: password,
+			Error:    errorMessage,
+		}, nil)
 	}
 
 	if name == "" {
@@ -41,7 +65,7 @@ func (this *controller) loginUser(response http.ResponseWriter, request *http.Re
 		return
 	}
 
-	err := this.model.LoginUser(name, password, response)
+	err := this.security.LoginUser(name, password, response)
 	if err != nil {
 		renderError("Invalid credentials.")
 		return

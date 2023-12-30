@@ -15,29 +15,6 @@ func newUserStorage(database *sql.DB) *userStorage {
 	return &userStorage{database}
 }
 
-func (this *userStorage) findUsers() []entity.User {
-	var users []entity.User
-	query := `SELECT * FROM "Users"`
-	rows, err := this.database.Query(query)
-	if err != nil {
-		log.Println(err.Error())
-		return users
-	}
-
-	defer rows.Close()
-	for rows.Next() {
-		var user entity.User
-		if err := rows.Scan(&user.Id, &user.Name, &user.Key); err != nil {
-			log.Println(err.Error())
-			return users
-		}
-
-		users = append(users, user)
-	}
-
-	return users
-}
-
 func (this *userStorage) userExists(name string) bool {
 	var exists bool
 	query := `SELECT EXISTS(SELECT 1 FROM "Users" WHERE "Name" = $1 )`
@@ -58,6 +35,21 @@ func (this *userStorage) findUserByName(name string) (entity.User, error) {
 	var user entity.User
 	query := `SELECT * FROM "Users" WHERE "Name" = $1`
 	row := this.database.QueryRow(query, name)
+	if err := row.Scan(&user.Id, &user.Name, &user.Key); err != nil {
+		if err != sql.ErrNoRows {
+			log.Println(err.Error())
+		}
+
+		return user, err
+	}
+
+	return user, nil
+}
+
+func (this *userStorage) findUserById(id int) (entity.User, error) {
+	var user entity.User
+	query := `SELECT * FROM "Users" WHERE "Id" = $1`
+	row := this.database.QueryRow(query, id)
 	if err := row.Scan(&user.Id, &user.Name, &user.Key); err != nil {
 		if err != sql.ErrNoRows {
 			log.Println(err.Error())

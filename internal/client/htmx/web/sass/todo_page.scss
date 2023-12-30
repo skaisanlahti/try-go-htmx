@@ -36,6 +36,8 @@
   }
 }
 
-.logout {
-  text-align: right;
+.nav {
+  display: flex;
+  justify-content: end;
+  gap: 2rem;
 }

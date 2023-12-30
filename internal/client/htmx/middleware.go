@@ -1,9 +1,13 @@
 package htmx
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/skaisanlahti/try-go-htmx/internal/entity"
+	"github.com/skaisanlahti/try-go-htmx/internal/security"
 )
 
 type responseRecorder struct {
@@ -16,7 +20,7 @@ func (recorder *responseRecorder) WriteHeader(code int) {
 	recorder.ResponseWriter.WriteHeader(code)
 }
 
-func (this *controller) logRequest() func(http.HandlerFunc) http.HandlerFunc {
+func newRequestLogger() func(http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(response http.ResponseWriter, request *http.Request) {
 			start := time.Now()
@@ -34,10 +38,10 @@ func (this *controller) logRequest() func(http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func (this *controller) requireSession(redirectUrl string) func(http.HandlerFunc) http.HandlerFunc {
+func newSessionGuard(security *security.SecurityService, redirectUrl string) func(http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(response http.ResponseWriter, request *http.Request) {
-			err := this.model.VerifySession(response, request)
+			user, err := security.VerifySession(response, request)
 			if err != nil {
 				if request.Header.Get("HX-Request") == "true" {
 					response.Header().Add("HX-Location", redirectUrl)
@@ -49,7 +53,17 @@ func (this *controller) requireSession(redirectUrl string) func(http.HandlerFunc
 				return
 			}
 
-			next(response, request)
+			requestWithUser := addUserToContext(user, request)
+			next(response, requestWithUser)
 		}
 	}
+}
+
+func addUserToContext(user entity.User, request *http.Request) *http.Request {
+	return request.WithContext(context.WithValue(request.Context(), "user", user))
+}
+
+func extractUserFromContext(request *http.Request) (entity.User, bool) {
+	user, ok := request.Context().Value("user").(entity.User)
+	return user, ok
 }
