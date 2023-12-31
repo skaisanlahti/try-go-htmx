@@ -19,6 +19,9 @@ devDependencies:
   parcel:
     specifier: ^2.9.3
     version: 2.9.3(typescript@5.1.6)
+  prettier:
+    specifier: ^3.1.1
+    version: 3.1.1
   sass:
     specifier: ^1.66.1
     version: 1.66.1
@@ -1723,6 +1726,7 @@ packages:
   /node-gyp-build-optional-packages@5.0.7:
     resolution: {integrity: sha512-YlCCc6Wffkx0kHkmam79GKvDQ6x+QZkMjFGrIMxgFNILFvGSbCp2fCBC55pGTT9gVaz8Na5CLmxt/urtzRv36w==}
     hasBin: true
+    requiresBuild: true
     dev: true
     optional: true
 
@@ -1845,6 +1849,12 @@ packages:
     dependencies:
       posthtml-parser: 0.11.0
       posthtml-render: 3.0.0
+    dev: true
+
+  /prettier@3.1.1:
+    resolution: {integrity: sha512-22UbSzg8luF4UuZtzgiUOfcGM8s4tjBv6dJRT7j275NXsy2jb4aJa4NNveul5x4eqlF1wuhuR2RElK71RvmVaw==}
+    engines: {node: '>=14'}
+    hasBin: true
     dev: true
 
   /react-error-overlay@6.0.9:
