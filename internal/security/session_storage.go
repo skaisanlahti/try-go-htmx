@@ -10,43 +10,50 @@ import (
 	"github.com/skaisanlahti/try-go-htmx/internal/entity"
 )
 
-type sessionStorage struct {
-	sessions map[string]*entity.Session
+type SessionOptions struct {
+	Secure     bool
+	CookieName string
+	Secret     string
+	Duration   time.Duration
+}
+
+type SessionStorage struct {
+	sessions map[string]entity.Session
 	locker   sync.RWMutex
 }
 
-func newSessionStorage() *sessionStorage {
-	storage := &sessionStorage{
-		sessions: make(map[string]*entity.Session),
+func NewSessionStorage() *SessionStorage {
+	storage := &SessionStorage{
+		sessions: make(map[string]entity.Session),
 	}
 
-	go storage.removeExpired()
+	go storage.RemoveExpired()
 	return storage
 }
 
-func (this *sessionStorage) findSessionBySessionId(sessionId string) (entity.Session, error) {
+func (this *SessionStorage) FindSessionBySessionId(sessionId string) (entity.Session, error) {
 	this.locker.RLock()
 	defer this.locker.RUnlock()
 	session, ok := this.sessions[sessionId]
 	if !ok {
-		return *session, errors.New("Session not found.")
+		return session, errors.New("Session not found.")
 	}
 
-	return *session, nil
+	return session, nil
 }
 
-func (this *sessionStorage) findSessionByUserId(userId int) (entity.Session, error) {
+func (this *SessionStorage) FindSessionByUserId(userId int) (entity.Session, error) {
 	this.locker.RLock()
 	defer this.locker.RUnlock()
 	session, ok := this.sessions[strconv.Itoa(userId)]
 	if !ok {
-		return *session, errors.New("Session not found.")
+		return session, errors.New("Session not found.")
 	}
 
-	return *session, nil
+	return session, nil
 }
 
-func (this *sessionStorage) insertSession(newSession entity.Session) error {
+func (this *SessionStorage) InsertSession(newSession entity.Session) error {
 	this.locker.Lock()
 	defer this.locker.Unlock()
 	session, ok := this.sessions[newSession.Id]
@@ -55,22 +62,28 @@ func (this *sessionStorage) insertSession(newSession entity.Session) error {
 		delete(this.sessions, session.Id)
 	}
 
-	this.sessions[newSession.Id] = &newSession
-	this.sessions[strconv.Itoa(newSession.UserId)] = &newSession
+	this.sessions[newSession.Id] = newSession
+	this.sessions[strconv.Itoa(newSession.UserId)] = newSession
 	return nil
 }
 
-func (this *sessionStorage) updateSession(session entity.Session) error {
+func (this *SessionStorage) UpdateSession(session entity.Session) error {
 	this.locker.Lock()
 	defer this.locker.Unlock()
-	this.sessions[session.Id] = &session
-	this.sessions[strconv.Itoa(session.UserId)] = &session
+	this.sessions[session.Id] = session
+	this.sessions[strconv.Itoa(session.UserId)] = session
 	return nil
 }
 
-func (this *sessionStorage) deleteSession(session entity.Session) error {
+func (this *SessionStorage) DeleteSession(sessionId string) error {
 	this.locker.Lock()
 	defer this.locker.Unlock()
+
+	session, ok := this.sessions[sessionId]
+	if !ok {
+		return errors.New("Session not found.")
+	}
+
 	delete(this.sessions, session.Id)
 	delete(this.sessions, strconv.Itoa(session.UserId))
 	return nil
@@ -81,7 +94,7 @@ const (
 	timeFormat       string        = "2006/01/02 15:04:05 -0700"
 )
 
-func (this *sessionStorage) removeExpired() {
+func (this *SessionStorage) RemoveExpired() {
 	log.Printf("Started a session clean up process at %s.", time.Now().Format(timeFormat))
 	for {
 		log.Printf("Next expired session clean up scheduled at %s.", time.Now().Add(checkingInterval).Format(timeFormat))

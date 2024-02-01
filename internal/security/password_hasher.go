@@ -22,13 +22,13 @@ type PasswordOptions struct {
 	Version             uint32
 }
 
-type passwordHasher struct {
+type PasswordHasher struct {
 	options PasswordOptions
 }
 
-func newPasswordHasher(options PasswordOptions) *passwordHasher {
+func NewPasswordHasher(options PasswordOptions) *PasswordHasher {
 	options.Version = argon2.Version
-	return &passwordHasher{options}
+	return &PasswordHasher{options}
 }
 
 func newSalt(length uint32) []byte {
@@ -41,14 +41,14 @@ func newSalt(length uint32) []byte {
 	return bytes
 }
 
-func (this *passwordHasher) hash(password string) ([]byte, error) {
+func (this *PasswordHasher) Hash(password string) ([]byte, error) {
 	salt := newSalt(this.options.SaltLength)
 	key := argon2.IDKey([]byte(password), salt, this.options.Time, this.options.Memory, this.options.Threads, this.options.KeyLength)
 	encodedKey := this.encode(salt, key, this.options)
 	return encodedKey, nil
 }
 
-func (this *passwordHasher) verify(encodedKey []byte, candidatePassword string) (bool, chan []byte) {
+func (this *PasswordHasher) Verify(encodedKey []byte, candidatePassword string) (bool, chan []byte) {
 	salt, key, options, err := this.decode(encodedKey)
 	if err != nil {
 		return false, nil
@@ -66,13 +66,13 @@ func (this *passwordHasher) verify(encodedKey []byte, candidatePassword string) 
 	return isPasswordCorrect, newKeyChannel
 }
 
-func (this *passwordHasher) rehash(password string, newKeyChannel chan<- []byte) {
+func (this *PasswordHasher) rehash(password string, newKeyChannel chan<- []byte) {
 	defer close(newKeyChannel)
-	newKey, _ := this.hash(password)
+	newKey, _ := this.Hash(password)
 	newKeyChannel <- newKey
 }
 
-func (this *passwordHasher) encode(salt []byte, key []byte, options PasswordOptions) []byte {
+func (this *PasswordHasher) encode(salt []byte, key []byte, options PasswordOptions) []byte {
 	encodedSalt := base64.RawStdEncoding.EncodeToString(salt)
 	encodedKey := base64.RawStdEncoding.EncodeToString(key)
 	fullEncodedKey := []byte(fmt.Sprintf(
@@ -88,7 +88,7 @@ func (this *passwordHasher) encode(salt []byte, key []byte, options PasswordOpti
 	return fullEncodedKey
 }
 
-func (this *passwordHasher) decode(encodedKey []byte) ([]byte, []byte, *PasswordOptions, error) {
+func (this *PasswordHasher) decode(encodedKey []byte) ([]byte, []byte, *PasswordOptions, error) {
 	parts := strings.Split(string(encodedKey), "$")
 	if len(parts) != 6 {
 		return nil, nil, nil, errors.New("Invalid key.")
@@ -125,7 +125,7 @@ func (this *passwordHasher) decode(encodedKey []byte) ([]byte, []byte, *Password
 	return salt, key, options, nil
 }
 
-func (this *passwordHasher) check(options *PasswordOptions) bool {
+func (this *PasswordHasher) check(options *PasswordOptions) bool {
 	if this.options.Time != options.Time {
 		return false
 	}
