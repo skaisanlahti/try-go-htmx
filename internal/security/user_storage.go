@@ -2,7 +2,6 @@ package security
 
 import (
 	"database/sql"
-	"errors"
 	"log"
 
 	"github.com/skaisanlahti/try-go-htmx/internal/entity"
@@ -67,7 +66,7 @@ func (this *UserStorage) InsertUserIfNotExists(user entity.User) (int, error) {
 	}
 
 	if exists {
-		return 0, errors.New("User already exists.")
+		return 0, ErrUserAlreadyExists
 	}
 
 	userQuery := `INSERT INTO "Users" ("Name", "Password") VALUES ($1, $2) RETURNING "Id"`

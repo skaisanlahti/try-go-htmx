@@ -8,15 +8,15 @@ import (
 	"strings"
 )
 
-type Signer struct {
+type SessionSigner struct {
 	options SessionOptions
 }
 
-func NewSigner(options SessionOptions) *Signer {
-	return &Signer{options}
+func NewSessionSigner(options SessionOptions) *SessionSigner {
+	return &SessionSigner{options}
 }
 
-func (this *Signer) NewSignature(sessionId string) (string, error) {
+func (this *SessionSigner) NewSignature(sessionId string) (string, error) {
 	code := hmac.New(sha256.New, []byte(this.options.Secret))
 	code.Write([]byte(this.options.CookieName))
 	code.Write([]byte(sessionId))
@@ -30,7 +30,7 @@ func (this *Signer) NewSignature(sessionId string) (string, error) {
 	return encodedSession, nil
 }
 
-func (this *Signer) VerifySignature(encodedSession string) (string, error) {
+func (this *SessionSigner) VerifySignature(encodedSession string) (string, error) {
 	signedSession, err := base64.URLEncoding.DecodeString(encodedSession)
 	if err != nil {
 		return "", err

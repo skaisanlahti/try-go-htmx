@@ -1,7 +1,9 @@
 package security
 
 import (
+	"crypto/rand"
 	"database/sql"
+	"encoding/base64"
 	"errors"
 	"log"
 	"net/http"
@@ -9,6 +11,21 @@ import (
 
 	"github.com/skaisanlahti/try-go-htmx/internal/entity"
 )
+
+var (
+	ErrInvalidCredentials = errors.New("Invalid credentials.")
+	ErrUserAlreadyExists  = errors.New("User already exists.")
+)
+
+func NewSessionSecret(length uint32) string {
+	bytes := make([]byte, length)
+	_, err := rand.Read(bytes)
+	if err != nil {
+		panic(err)
+	}
+
+	return base64.StdEncoding.EncodeToString(bytes)
+}
 
 type SecurityService struct {
 	database        *sql.DB
