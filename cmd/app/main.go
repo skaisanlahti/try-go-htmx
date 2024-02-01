@@ -20,8 +20,6 @@ func main() {
 		MigrateOnStartup:   settings.Database.MigrateOnStartup,
 	})
 
-	server := platform.NewServer(settings.Address, database)
-
 	// services
 	passwordOptions := security.PasswordOptions{
 		Time:                settings.Password.Time,
@@ -43,6 +41,7 @@ func main() {
 	todo := todo.NewTodoService(database)
 
 	// clients
+	server := platform.NewServer(settings.Address, database)
 	htmx.NewClient(security, todo, server.Router)
 
 	// start
