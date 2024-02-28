@@ -16,7 +16,7 @@ type todoListPageData struct {
 }
 
 type todoListPageController struct {
-	todo *todo.TodoService
+	todoService *todo.TodoService
 	*defaultRenderer
 }
 
@@ -34,7 +34,7 @@ func (this *todoListPageController) page(response http.ResponseWriter, request *
 
 	this.render(response, "page", todoListPageData{
 		Key:       newRenderKey(),
-		TodoLists: this.todo.FindListsByUserId(user.Id),
+		TodoLists: this.todoService.FindListsByUserId(user.Id),
 	}, nil)
 }
 
@@ -47,7 +47,7 @@ func (this *todoListPageController) lists(response http.ResponseWriter, request 
 
 	this.render(response, "list", todoListPageData{
 		Key:       newRenderKey(),
-		TodoLists: this.todo.FindListsByUserId(user.Id),
+		TodoLists: this.todoService.FindListsByUserId(user.Id),
 	}, nil)
 }
 
@@ -59,7 +59,7 @@ func (this *todoListPageController) addList(response http.ResponseWriter, reques
 		return
 	}
 
-	if _, err := this.todo.AddList(name, user.Id); err != nil {
+	if _, err := this.todoService.AddList(name, user.Id); err != nil {
 		this.render(response, "form", todoListPageData{
 			Key:   newRenderKey(),
 			Name:  name,
@@ -82,7 +82,7 @@ func (this *todoListPageController) removeList(response http.ResponseWriter, req
 		return
 	}
 
-	if _, err = this.todo.RemoveList(listId); err != nil {
+	if err = this.todoService.RemoveList(listId); err != nil {
 		http.Error(response, err.Error(), http.StatusInternalServerError)
 		return
 	}

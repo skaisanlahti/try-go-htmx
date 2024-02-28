@@ -3,26 +3,26 @@
 <!-- .Key as name attribute required to stop firefox from preserving values through page refresh -->
 {{ block "form" . }}
 <form
-  id="register-form"
-  name="{{ .Key }}"
-  hx-post="/htmx/api/register"
-  hx-target="#register-form"
-  hx-swap="outerHTML"
+    id="register-form"
+    name="{{ .Key }}"
+    hx-post="/htmx/api/register"
+    hx-target="#register-form"
+    hx-swap="outerHTML"
 >
-  <input
-    type="text"
-    name="name"
-    placeholder="Username..."
-    value="{{ .Name }}"
-  />
-  <input
-    type="password"
-    name="password"
-    placeholder="Password..."
-    value="{{ .Password }}"
-  />
-  <p>{{ .Error }}</p>
-  <button type="submit">Register</button>
+    <input
+        type="text"
+        name="name"
+        placeholder="Username..."
+        value="{{ .Name }}"
+    />
+    <input
+        type="password"
+        name="password"
+        placeholder="Password..."
+        value="{{ .Password }}"
+    />
+    <p>{{ .Error }}</p>
+    <button type="submit">Register</button>
 </form>
 {{ end }}
 <a href="/htmx/login">Already have an account?</a>

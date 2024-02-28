@@ -22,7 +22,7 @@ type todoPageData struct {
 }
 
 type todoPageController struct {
-	todo *todo.TodoService
+	todoService *todo.TodoService
 	*defaultRenderer
 }
 
@@ -59,7 +59,7 @@ func (this *todoPageController) page(response http.ResponseWriter, request *http
 		return
 	}
 
-	list, err := this.todo.FindListById(listId)
+	list, err := this.todoService.FindListById(listId)
 	if err != nil {
 		log.Println(err.Error())
 		http.Redirect(response, request, "/htmx/todo-lists", http.StatusSeeOther)
@@ -70,7 +70,7 @@ func (this *todoPageController) page(response http.ResponseWriter, request *http
 		Key:          newRenderKey(),
 		TodoListId:   listId,
 		TodoListName: list.Name,
-		Todos:        this.todo.FindTodosByListId(listId),
+		Todos:        this.todoService.FindTodosByListId(listId),
 	}, nil)
 
 }
@@ -84,7 +84,7 @@ func (this *todoPageController) todos(response http.ResponseWriter, request *htt
 
 	this.render(response, "list", todoPageData{
 		TodoListId: listId,
-		Todos:      this.todo.FindTodosByListId(listId),
+		Todos:      this.todoService.FindTodosByListId(listId),
 	}, nil)
 
 }
@@ -98,18 +98,18 @@ func (this *todoPageController) addTodo(response http.ResponseWriter, request *h
 		return
 	}
 
-	if _, err = this.todo.AddTodo(task, listId); err != nil {
+	if _, err = this.todoService.AddTodo(task, listId); err != nil {
 		this.render(response, "form", todoPageData{
-			Key:   newRenderKey(),
+			Key:        newRenderKey(),
 			TodoListId: listId,
-			Task:  task,
-			Error: err.Error(),
+			Task:       task,
+			Error:      err.Error(),
 		}, nil)
 		return
 	}
 
 	this.render(response, "form", todoPageData{
-		Key: newRenderKey(),
+		Key:        newRenderKey(),
 		TodoListId: listId,
 	}, extraHeaders{
 		"HX-Trigger": "GetTodos",
@@ -143,7 +143,7 @@ func (this *todoPageController) toggleTodo(response http.ResponseWriter, request
 		return
 	}
 
-	todo, err := this.todo.ToggleTodo(id)
+	todo, err := this.todoService.ToggleTodo(id)
 	if err != nil {
 		http.Error(response, err.Error(), http.StatusInternalServerError)
 		return
@@ -159,7 +159,7 @@ func (this *todoPageController) removeTodo(response http.ResponseWriter, request
 		return
 	}
 
-	if _, err = this.todo.RemoveTodo(id); err != nil {
+	if err = this.todoService.RemoveTodo(id); err != nil {
 		http.Error(response, err.Error(), http.StatusInternalServerError)
 		return
 	}

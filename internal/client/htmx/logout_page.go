@@ -12,7 +12,7 @@ type logoutPageData struct {
 }
 
 type logoutPageController struct {
-	security *security.SecurityService
+	securityService *security.SecurityService
 	*defaultRenderer
 }
 
@@ -23,12 +23,12 @@ func newLogoutPageController(security *security.SecurityService) *logoutPageCont
 
 func (this *logoutPageController) page(response http.ResponseWriter, request *http.Request) {
 	this.render(response, "page", logoutPageData{
-		LoggedIn: this.security.IsLoggedIn(request),
+		LoggedIn: this.securityService.IsLoggedIn(request),
 	}, nil)
 }
 
 func (this *logoutPageController) logoutUser(response http.ResponseWriter, request *http.Request) {
-	err := this.security.LogoutUser(response, request)
+	err := this.securityService.LogoutUser(response, request)
 	if err != nil {
 		http.Error(response, err.Error(), http.StatusBadRequest)
 		return

@@ -3,7 +3,7 @@
 <!-- nav -->
 {{ define "nav" }}
 <nav class="nav">
-  <a href="#" hx-delete="/htmx/api/logout">Logout</a>
+    <a href="#" hx-delete="/htmx/api/logout">Logout</a>
 </nav>
 {{ end }}
 <!-- main -->
@@ -13,55 +13,55 @@
 <!-- main.form -->
 {{ block "form" . }}
 <form
-  id="todo-list-form"
-  name="{{ .Key }}"
-  hx-post="/htmx/api/todo-lists/add"
-  hx-target="#todo-list-form"
-  hx-swap="outerHTML"
+    id="todo-list-form"
+    name="{{ .Key }}"
+    hx-post="/htmx/api/todo-lists/add"
+    hx-target="#todo-list-form"
+    hx-swap="outerHTML"
 >
-  <input
-    type="text"
-    name="name"
-    placeholder="List name..."
-    value="{{ .Name }}"
-  />
-  <p>{{ .Error }}</p>
-  <button type="submit">Create todo list</button>
+    <input
+        type="text"
+        name="name"
+        placeholder="List name..."
+        value="{{ .Name }}"
+    />
+    <p>{{ .Error }}</p>
+    <button type="submit">Create todo list</button>
 </form>
 {{ end }}
 <!-- main.form end-->
 <!-- main.list -->
 {{ block "list" . }}
 <div
-  class="container"
-  id="todos"
-  hx-get="/htmx/api/todo-lists/list"
-  hx-trigger="GetLists from:body"
-  hx-swap="outerHTML swap:500ms"
+    class="container"
+    id="todos"
+    hx-get="/htmx/api/todo-lists/list"
+    hx-trigger="GetLists from:body"
+    hx-swap="outerHTML swap:500ms"
 >
-  <!-- main.list.range -->
-  {{ range .TodoLists }}
-  <!-- main.list.range.item -->
-  {{ block "item" . }}
-  <div id="item-{{ .Id }}" class="todo_item removable">
-    <span class="todo_item-task">{{ .Name }}</span>
-    <a role="button" class="primary" href="/htmx/todos?listid={{ .Id }}">
-      Show
-    </a>
-    <button
-      role="button"
-      class="secondary"
-      hx-delete="/htmx/api/todo-lists/remove?listid={{ .Id }}"
-      hx-target="#item-{{ .Id }}"
-      hx-swap="outerHTML swap:1000ms"
-    >
-      Remove
-    </button>
-  </div>
-  {{ end }}
-  <!-- main.list.range.item end -->
-  {{ end }}
-  <!-- main.list.range end -->
+    <!-- main.list.range -->
+    {{ range .TodoLists }}
+    <!-- main.list.range.item -->
+    {{ block "item" . }}
+    <div id="item-{{ .Id }}" class="todo_item removable">
+        <span class="todo_item-task">{{ .Name }}</span>
+        <a role="button" class="primary" href="/htmx/todos?listid={{ .Id }}">
+            Show
+        </a>
+        <button
+            role="button"
+            class="secondary"
+            hx-delete="/htmx/api/todo-lists/remove?listid={{ .Id }}"
+            hx-target="#item-{{ .Id }}"
+            hx-swap="outerHTML swap:1000ms"
+        >
+            Remove
+        </button>
+    </div>
+    {{ end }}
+    <!-- main.list.range.item end -->
+    {{ end }}
+    <!-- main.list.range end -->
 </div>
 {{ end }}
 <!-- main.list end -->

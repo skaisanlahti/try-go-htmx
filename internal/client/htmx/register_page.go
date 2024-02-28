@@ -15,7 +15,7 @@ type registerPageData struct {
 }
 
 type registerPageController struct {
-	security *security.SecurityService
+	securityService *security.SecurityService
 	*defaultRenderer
 }
 
@@ -25,7 +25,7 @@ func newRegisterPageController(security *security.SecurityService) *registerPage
 }
 
 func (this *registerPageController) page(response http.ResponseWriter, request *http.Request) {
-	isLoggedIn := this.security.IsLoggedIn(request)
+	isLoggedIn := this.securityService.IsLoggedIn(request)
 	if isLoggedIn {
 		http.Redirect(response, request, "/htmx/todos", http.StatusSeeOther)
 		return
@@ -37,7 +37,7 @@ func (this *registerPageController) page(response http.ResponseWriter, request *
 }
 
 func (this *registerPageController) registerUser(response http.ResponseWriter, request *http.Request) {
-	isLoggedIn := this.security.IsLoggedIn(request)
+	isLoggedIn := this.securityService.IsLoggedIn(request)
 	if isLoggedIn {
 		response.WriteHeader(http.StatusBadRequest)
 		return
@@ -64,7 +64,7 @@ func (this *registerPageController) registerUser(response http.ResponseWriter, r
 		return
 	}
 
-	err := this.security.RegisterUser(name, password, response)
+	err := this.securityService.RegisterUser(name, password, response)
 	if err == security.ErrUserAlreadyExists {
 		renderError(err.Error())
 		return

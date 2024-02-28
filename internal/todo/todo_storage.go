@@ -106,6 +106,7 @@ func (this *todoStorage) findTodosByListId(todoListId int) []entity.Todo {
 }
 
 func (this *todoStorage) findTodoById(id int) (entity.Todo, error) {
+
 	var todo entity.Todo
 	query := `SELECT * FROM "Todos" WHERE "Id" = $1`
 	row := this.database.QueryRow(query, id)

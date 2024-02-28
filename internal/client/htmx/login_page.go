@@ -15,7 +15,7 @@ type loginPageData struct {
 }
 
 type loginPageController struct {
-	security *security.SecurityService
+	securityService *security.SecurityService
 	*defaultRenderer
 }
 
@@ -25,7 +25,7 @@ func newLoginPageController(security *security.SecurityService) *loginPageContro
 }
 
 func (this *loginPageController) page(response http.ResponseWriter, request *http.Request) {
-	isLoggedIn := this.security.IsLoggedIn(request)
+	isLoggedIn := this.securityService.IsLoggedIn(request)
 	if isLoggedIn {
 		http.Redirect(response, request, "/htmx/todos", http.StatusSeeOther)
 		return
@@ -37,13 +37,12 @@ func (this *loginPageController) page(response http.ResponseWriter, request *htt
 }
 
 func (this *loginPageController) loginUser(response http.ResponseWriter, request *http.Request) {
-	isLoggedIn := this.security.IsLoggedIn(request)
+	isLoggedIn := this.securityService.IsLoggedIn(request)
 	if isLoggedIn {
 		response.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	response.Header().Add("HX-Location", "/htmx/todos")
 	name := request.FormValue("name")
 	password := request.FormValue("password")
 	renderError := func(errorMessage string) {
@@ -65,7 +64,7 @@ func (this *loginPageController) loginUser(response http.ResponseWriter, request
 		return
 	}
 
-	err := this.security.LoginUser(name, password, response)
+	err := this.securityService.LoginUser(name, password, response)
 	if err != nil {
 		renderError("Invalid credentials.")
 		return

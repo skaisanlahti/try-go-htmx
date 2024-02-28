@@ -38,10 +38,10 @@ func newRequestLogger() func(http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func newSessionGuard(security *security.SecurityService, redirectUrl string) func(http.HandlerFunc) http.HandlerFunc {
+func newSessionGuard(securityService *security.SecurityService, redirectUrl string) func(http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(response http.ResponseWriter, request *http.Request) {
-			user, err := security.VerifySession(response, request)
+			user, err := securityService.VerifySession(response, request)
 			if err != nil {
 				if request.Header.Get("HX-Request") == "true" {
 					response.Header().Add("HX-Location", redirectUrl)

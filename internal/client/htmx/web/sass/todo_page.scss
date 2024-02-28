@@ -1,43 +1,43 @@
 #todos {
-  opacity: 1;
-  transition: opacity 500ms ease-out;
+    opacity: 1;
+    transition: opacity 500ms ease-out;
 
-  &.htmx-added {
-    opacity: 0;
-  }
+    &.htmx-added {
+        opacity: 0;
+    }
 
-  &.htmx-swapping {
-    opacity: 0;
-  }
+    &.htmx-swapping {
+        opacity: 0;
+    }
 }
 
 .todo_item {
-  display: grid;
-  align-items: center;
-  grid-template-columns: 1fr 200px 200px;
-  gap: 1rem;
-  margin-bottom: 1rem;
+    display: grid;
+    align-items: center;
+    grid-template-columns: 1fr 200px 200px;
+    gap: 1rem;
+    margin-bottom: 1rem;
 
-  &.removable {
-    opacity: 1;
-    transition: opacity 1s ease-out;
+    &.removable {
+        opacity: 1;
+        transition: opacity 1s ease-out;
 
-    &.htmx-swapping {
-      opacity: 0;
+        &.htmx-swapping {
+            opacity: 0;
+        }
     }
-  }
 
-  & > * {
-    margin: 0 !important;
-  }
+    & > * {
+        margin: 0 !important;
+    }
 
-  &-task {
-    font-size: 2em;
-  }
+    &-task {
+        font-size: 2em;
+    }
 }
 
 .nav {
-  display: flex;
-  justify-content: end;
-  gap: 2rem;
+    display: flex;
+    justify-content: end;
+    gap: 2rem;
 }

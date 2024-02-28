@@ -1,2 +1,12 @@
-'prettier' is not recognized as an internal or external command,
-operable program or batch file.
+{{ define "title" }}Logout{{ end }} {{ define "main" }} {{ if .LoggedIn }}
+<h1>You are still logged in</h1>
+<p>
+    <a href="/htmx/todos">Continue browsing</a>
+</p>
+<p>
+    <a href="#" hx-delete="/htmx/api/logout">Logout</a>
+</p>
+{{ else }}
+<h1>Logged out</h1>
+<a href="/htmx/login">Back to login</a>
+{{ end }} {{ end }}
