@@ -39,13 +39,13 @@
     id="todos"
     hx-get="/htmx/api/todos/list?listid={{ .TodoListId }}"
     hx-trigger="GetTodos from:body"
-    hx-swap="outerHTML swap:500ms"
+    hx-swap="outerHTML"
 >
     <!-- main.list.range -->
     {{ range .Todos }}
     <!-- main.list.range.item -->
     {{ block "item" . }}
-    <div id="item-{{ .Id }}" class="todo_item {{ if .Done }}removable{{ end }}">
+    <div id="item-{{ .Id }}" class="todo_item">
         <span class="todo_item-task">{{ .Task }}</span>
         <!-- main.list.range.item.if -->
         {{ if .Done }}
@@ -54,7 +54,7 @@
             class="todo_item-toggle"
             hx-patch="/htmx/api/todos/toggle?id={{ .Id }}"
             hx-target="#item-{{ .Id }}"
-            hx-swap="outerHTML settle:0ms"
+            hx-swap="outerHTML"
         >
             Mark Undone
         </button>
@@ -63,7 +63,7 @@
             class="secondary"
             hx-delete="/htmx/api/todos/remove?id={{ .Id }}"
             hx-target="#item-{{ .Id }}"
-            hx-swap="outerHTML swap:1000ms"
+            hx-swap="outerHTML"
         >
             Remove
         </button>
@@ -73,7 +73,7 @@
             class="todo_item-toggle outline"
             hx-patch="/htmx/api/todos/toggle?id={{ .Id }}"
             hx-target="#item-{{ .Id }}"
-            hx-swap="outerHTML settle:0ms"
+            hx-swap="outerHTML"
         >
             Mark Done
         </button>

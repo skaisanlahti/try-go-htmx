@@ -37,13 +37,13 @@
     id="todos"
     hx-get="/htmx/api/todo-lists/list"
     hx-trigger="GetLists from:body"
-    hx-swap="outerHTML swap:500ms"
+    hx-swap="outerHTML"
 >
     <!-- main.list.range -->
     {{ range .TodoLists }}
     <!-- main.list.range.item -->
     {{ block "item" . }}
-    <div id="item-{{ .Id }}" class="todo_item removable">
+    <div id="item-{{ .Id }}" class="todo_item">
         <span class="todo_item-task">{{ .Name }}</span>
         <a role="button" class="primary" href="/htmx/todos?listid={{ .Id }}">
             Show
@@ -53,7 +53,7 @@
             class="secondary"
             hx-delete="/htmx/api/todo-lists/remove?listid={{ .Id }}"
             hx-target="#item-{{ .Id }}"
-            hx-swap="outerHTML swap:1000ms"
+            hx-swap="outerHTML"
         >
             Remove
         </button>

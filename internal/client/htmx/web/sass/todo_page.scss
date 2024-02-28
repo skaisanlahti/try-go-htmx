@@ -1,31 +1,9 @@
-#todos {
-    opacity: 1;
-    transition: opacity 500ms ease-out;
-
-    &.htmx-added {
-        opacity: 0;
-    }
-
-    &.htmx-swapping {
-        opacity: 0;
-    }
-}
-
 .todo_item {
     display: grid;
     align-items: center;
     grid-template-columns: 1fr 200px 200px;
     gap: 1rem;
     margin-bottom: 1rem;
-
-    &.removable {
-        opacity: 1;
-        transition: opacity 1s ease-out;
-
-        &.htmx-swapping {
-            opacity: 0;
-        }
-    }
 
     & > * {
         margin: 0 !important;
